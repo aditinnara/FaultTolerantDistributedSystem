@@ -1,10 +1,8 @@
 # LFD (Local Fault Detector) Pseudocode
 import socket
 import select
-from socket import timeout
 from time import localtime, strftime, time, sleep
 import sys
-import threading
 
 last_heartbeat_acked = time()
 

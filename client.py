@@ -1,9 +1,9 @@
 # CLIENT pseudocode
 
-import socket, select
+import socket
 from time import localtime, strftime, time, sleep
 import sys
-
+    
 def run_client(client_id, client_freq):
     # initialize client
     c = socket.socket()

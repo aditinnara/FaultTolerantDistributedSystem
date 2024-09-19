@@ -93,8 +93,7 @@
 # NONBLOCKING IO SERVER CODE
 
 import socket
-from time import localtime, strftime, time, sleep
-import sys
+from time import localtime, strftime
 
 def client_handler(client_socket, addr, my_state):
     try:
