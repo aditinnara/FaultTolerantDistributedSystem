@@ -60,7 +60,6 @@ def send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout):
             heartbeat_count = 1
             break
             
-            
 
 
 def run_LFD(heartbeat_freq):
