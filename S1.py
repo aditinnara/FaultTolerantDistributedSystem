@@ -187,7 +187,8 @@ def run_server():
             client_sockets = active_client_connections
 
     except Exception as e:
-        print(f"Error: {e}")
+        # print(f"Error: {e}")
+        pass
     finally:
         # if error, close all clients and server
         s1.close()

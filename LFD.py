@@ -54,9 +54,9 @@ def send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout):
             
         # CHECK TIMEOUT
         if time() - last_received_time > heartbeat_timeout:
-            print("elapsed time from last received msg: ", time() - last_received_time)
+            # print("elapsed time from last received msg: ", time() - last_received_time)
 
-            print(f"[{strftime("%Y-%m-%d %H:%M:%S", localtime())}] S1 has died.")
+            print(f"\033[1;31m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] S1 has died.\033[0m")
             heartbeat_count = 1
             break
             
@@ -80,8 +80,8 @@ def run_LFD(heartbeat_freq):
 
             # shouldn't try to wait for the "s1 has died" to join because I haven't set a break
         except Exception as e:  
-            print(f"Error while trying to reconnect to server: {e}")
-            sleep(heartbeat_timeout)    # idk if this is the correct behavior
+            # print(f"Error while trying to reconnect to server: {e}")
+            sleep(heartbeat_timeout)    # idk if this is the correct behavior!!!!!!!!!!!
     
 
 
