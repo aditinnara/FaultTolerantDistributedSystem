@@ -30,7 +30,7 @@ def run_client(client_id, client_freq):
         # get timestamp
         sent_timestamp_str = strftime("%Y-%m-%d %H:%M:%S", localtime())
         # print [timestamp] Sent 'request'
-        print(f"[{sent_timestamp_str}] Sent {request_str}")
+        print(f"\033[1;38;5;214m[{sent_timestamp_str}] Sent {request_str}\033[0m")
 
             
         # receive reply from server:
@@ -40,7 +40,7 @@ def run_client(client_id, client_freq):
         reply = c.recv(1024).decode()   # try catch
         # print [timestamp] Received 'reply'
         recv_timestamp_str = strftime("%Y-%m-%d %H:%M:%S", localtime())
-        print(f"[{recv_timestamp_str}] Received {reply}")
+        print(f"\033[38;5;214m[{recv_timestamp_str}] Received {reply}\033[0m")
 
         # wait 2 seconds before sending another message
         sleep(client_freq)

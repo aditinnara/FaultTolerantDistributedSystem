@@ -109,33 +109,34 @@ def client_handler(client_socket, addr, my_state):
             heartbeat_count = request_split[2].strip()
 
             # print [timestamp] [heartbeat_count] S1 receives heartbeat from LFD
-            print(f"[{strftime("%Y-%m-%d %H:%M:%S", localtime())}] [{heartbeat_count}] S1 receives heartbeat from LFD1")
+            print(f"\033[1;35m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count}] S1 receives heartbeat from LFD1\033[0m")
             # print [timestamp] [heartbeat_count] S1 sending heartbeat acknowledgment to LFD
-            print(f"[{strftime("%Y-%m-%d %H:%M:%S", localtime())}] [{heartbeat_count}] S1 sending heartbeat ACK to LFD1")
+            print(f"\033[35m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count}] S1 sending heartbeat ACK to LFD1\033[0")
+
             # send heartbeat reply (just send the request back)
             client_socket.sendall(request.encode())
         else:   # receive request from client:
             # print [timestamp] Received <client_id, server_id, request_num, request> 
-            print(f"[{strftime("%Y-%m-%d %H:%M:%S", localtime())}] Received {request}")
+            print(f"\033[1;38;5;214m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] Received {request}\033[0m")
             
             client_id = request_split[0]   # get the "C1"
             request_num = int(request_split[2])
 
             # print [timestamp] my_state_[S1] =  prev_state before processing <client_id, server_id, request_num, request>
-            print(f"[{strftime("%Y-%m-%d %H:%M:%S", localtime())}] my_state_S1 = {my_state} before processing {request}")
+            print(f"\033[34m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] my_state_S1 = {my_state} before processing {request}\033[0m")
 
             # update state (inc num hellos from this client)
             my_state[client_id] += 1
 
             # print [timestamp] my_state_[S1] =  new_state after processing <client_id, server_id, request_num, request>
-            print(f"[{strftime("%Y-%m-%d %H:%M:%S", localtime())}] my_state_S1 = {my_state} after processing {request}")
+            print(f"\033[1;34m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] my_state_S1 = {my_state} after processing {request}\033[0m")
 
             # process request to create a reply --> "Hello, client client_id!"  
             reply_str = f"Hello, Client {client_id}"
             # reply = <client_id, server_id, request_num, reply> 
             reply = f"<{client_id}, S1, {request_num}, {reply_str}>"
             # print [timestamp] Sending <client_id, server_id, request_num, reply> 
-            print(f"[{strftime("%Y-%m-%d %H:%M:%S", localtime())}] Sending {reply}")
+            print(f"\033[38;5;214m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] Sending {reply}\033[0m")
             # send the reply
             client_socket.sendall(reply.encode())
         return True  # if we made it through the whole try block, our client is active, return True

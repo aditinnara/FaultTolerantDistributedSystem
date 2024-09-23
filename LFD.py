@@ -10,7 +10,11 @@ def send_heartbeat(heartbeat_freq, lfd_socket):
     global last_sent_time, heartbeat_count
     if time() - last_sent_time >= heartbeat_freq: 
         heartbeat = f"<LFD1, S1, {heartbeat_count}, heartbeat>"
-        print(f"[{strftime("%Y-%m-%d %H:%M:%S", localtime())}] [{heartbeat_count}] LFD1 sending heartbeat to S1")
+        
+        # use ansi color
+        heartbeat_text = f"\033[1;35m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count}] LFD1 sending heartbeat to S1\033[0m"
+        print(heartbeat_text)
+       
         try:
             last_sent_time = time()
             lfd_socket.sendall(heartbeat.encode())
@@ -29,7 +33,8 @@ def receive_heartbeat(lfd_socket, heartbeat_freq):
             # if it's a heartbeat message, update the last heartbeat received time
             if "heartbeat" in heartbeat_ack:
                 heartbeat_count_str = heartbeat_ack.strip('<').split(',')[2].strip()
-                print(f"[{strftime("%Y-%m-%d %H:%M:%S", localtime())}] [{heartbeat_count_str}] LFD1 receives heartbeat ACK from S1")
+                print(f"\033[35m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count_str}] LFD1 receives heartbeat ACK from S1\033[0m")
+
                 last_received_time = time()
         except Exception as e: # Not sure if I should be exception handling
             pass
