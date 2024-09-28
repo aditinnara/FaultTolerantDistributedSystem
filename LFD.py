@@ -21,6 +21,8 @@ def send_heartbeat(heartbeat_freq, lfd_socket):
 
             # increment heartbeat number
             heartbeat_count += 1
+
+            # TODO: After the first heartbeat, send "LFD1: add replica S1" to GFD so GFD can register this server as a member
         except Exception as e:
             pass
 
@@ -57,6 +59,8 @@ def send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout):
             # print("elapsed time from last received msg: ", time() - last_received_time)
 
             print(f"\033[1;31m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] S1 has died.\033[0m")
+            # TODO: send "LFDx: delete replica Sx" too so GFD can remove the server as a member
+
             heartbeat_count = 1
             break
             
@@ -74,6 +78,8 @@ def run_LFD(heartbeat_freq):
             s1_port = 6000
             s1_ip = '127.0.0.1'
             lfd_socket.connect((s1_ip, s1_port))
+
+            # TODO: connect with GFD as well
 
             send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout)
 

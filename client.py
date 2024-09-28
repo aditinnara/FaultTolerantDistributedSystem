@@ -21,25 +21,26 @@ def run_client(client_id, client_freq):
         # keep track of request num
         c_request_num += 1
 
+
+        # TODO: this section should be a loop, looping across all active servers and sending requests to all of them
         # send requests to server
         # request = <C1, S1, request_num, request> 
         request_str = f"<C{client_id}, S{server_id}, {c_request_num}, Hello Server!>"
+
         # send request
         c.send(request_str.encode())
 
         # get timestamp
         sent_timestamp_str = strftime("%Y-%m-%d %H:%M:%S", localtime())
-        # print [timestamp] Sent 'request'
         print(f"\033[1;38;5;214m[{sent_timestamp_str}] Sent {request_str}\033[0m")
 
-            
-        # receive reply from server:
-        # reply = whatever server sends
-
-        # todo: do i need nonblocking here??????
-        reply = c.recv(1024).decode()   # try catch
-        # print [timestamp] Received 'reply'
+        # TODO: should this also be a loop - looping across active servers and receiving replies from all active servers
+        reply = c.recv(1024).decode()   
         recv_timestamp_str = strftime("%Y-%m-%d %H:%M:%S", localtime())
+
+        # TODO: only print this for one of the servers' responses -- suppress duplicates by keeping 
+        #       track of the last received request_num, and suppressing dups OR if received request_num
+        #       is greater than the request num that we just sent. Is this the correct logic?
         print(f"\033[38;5;214m[{recv_timestamp_str}] Received {reply}\033[0m")
 
         # wait 2 seconds before sending another message
