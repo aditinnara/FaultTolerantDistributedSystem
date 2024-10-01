@@ -14,6 +14,7 @@ def lfd_handler(lfd_socket, addr, my_state):
             request = lfd_socket.recv(1024).decode("utf-8")
             #"<LFD1, GFD, {heartbeat_count}, heartbeat>"
             #"<LFD1, GFD, add replica, S1>"
+            #"<LFD1, GFD, delete replica, S1>"
             request_split = request.strip('<').split(',')
             if "heartbeat" in request:  # receive heartbeat from LFD:
                 #which LFD is sending?
@@ -32,11 +33,13 @@ def lfd_handler(lfd_socket, addr, my_state):
                 member_count += 1 
                 membership.append(added_server) 
                 print(f"GFD: {member_count} member: {", ".join(membership)}")
+            elif "delete replica" in request: #add replica to membership 
+                sending_lfd = request_split[0].strip() #LFD1
+                removed_server = request_split[3].strip() #S1
+                member_count -= 1 
+                membership.remove(removed_server) 
+                print(f"GFD: {member_count} member: {", ".join(membership)}")
 
-
-
-
-            
 
 
 # Allow GFD to always be listening -- LFD 1, LFD 2, LFD 3

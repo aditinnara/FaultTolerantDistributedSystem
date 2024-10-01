@@ -41,7 +41,7 @@ def receive_heartbeat(lfd_socket, heartbeat_freq):
         except Exception as e: # Not sure if I should be exception handling
             pass
 
-def send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout):
+def send_receive_check_heartbeat(socket, heartbeat_freq, heartbeat_timeout):
     global last_sent_time, heartbeat_count, last_received_time
     heartbeat_count = 1
 
@@ -50,8 +50,8 @@ def send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout):
 
 
     while True:
-        send_heartbeat(heartbeat_freq, lfd_socket)
-        receive_heartbeat(lfd_socket, heartbeat_freq)
+        send_heartbeat(heartbeat_freq, socket)
+        receive_heartbeat(socket, heartbeat_freq)
                     
             
         # CHECK TIMEOUT
@@ -75,13 +75,20 @@ def run_LFD(heartbeat_freq):
             # init lfd socket and connect
             lfd_socket = socket.socket()
             lfd_socket.settimeout(heartbeat_timeout)
-            s1_port = 6000
-            s1_ip = '127.0.0.1'
-            lfd_socket.connect((s1_ip, s1_port))
+            gfd_socket = socket.socket() 
+            gfd_socket.settimeout(heartbeat_timeout)
+            server_port = 6000
+            gfd_port = 6001
+            ip = '127.0.0.1'
+            lfd_socket.connect((ip, server_port))
+
+            
 
             # TODO: connect with GFD as well
+            lfd_socket.connect((ip, gfd_port))
 
-            send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout)
+            server_hb_thread = threading.Thread(target=send_receive_check_heartbeat, args=(lfd_socket, heartbeat_freq, heartbeat_timeout))
+            gfd_hb_thread = threading.Thread(target=send_receive_check_heartbeat, args=(gfd_socket, heartbeat_freq, heartbeat_timeout))
 
             # shouldn't try to wait for the "s1 has died" to join because I haven't set a break
         except Exception as e:  
