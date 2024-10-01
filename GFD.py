@@ -37,10 +37,12 @@ def lfd_handler(lfd_socket, addr):
             elif "delete replica" in request_split: # delete replica from membership 
                 sending_lfd = request_split[0].strip() # LFD1
                 removed_server = request_split[3].strip('>') # S1
-                member_count -= 1
-                membership.remove(removed_server)
-                print(f"\033[1;31mRemoving server {removed_server}...\033[0m")
-                print(f"\033[1;31mGFD: {member_count} members: {', '.join(membership)}\033[0m")
+                if removed_server in membership:
+                    member_count -= 1
+                    membership.remove(removed_server)
+                    print(f"\033[1;31mRemoving server {removed_server}...\033[0m")
+                    print(f"\033[1;31mGFD: {member_count} members: {', '.join(membership)}\033[0m")
+
     except Exception as e:
         print(e)
         pass
