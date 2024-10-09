@@ -168,6 +168,9 @@ def run_LFD(lfd_name, s_name, port, heartbeat_freq):
         except Exception as e:  
             print("No new connections...: ", e)
             sleep(heartbeat_timeout)  # Sleep before retrying the connection
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt: Exiting...")
+            s_socket.close() # Close the socket
 
 def send_gfd_heartbeat_loop(gfd_socket, lfd_name, heartbeat_freq):
     global gfd_heartbeat_count

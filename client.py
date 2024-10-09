@@ -66,6 +66,9 @@ def run_client(client_id, client_freq, server_id, server_port, mutex):
             sleep(client_freq)
         except Exception as e:
             pass
+        except KeyboardInterrupt:
+            c.close()
+            break
 
 if __name__ == "__main__":
     # give the client id as a commandline parameter AND the frequency with which client should send messages
