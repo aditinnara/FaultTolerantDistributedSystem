@@ -51,9 +51,9 @@ def lfd_handler(lfd_socket, addr):
         print(f"Connection to LFD ({addr[0]}:{addr[1]}) closed")
 
 
-def run_GFD():
+def run_GFD(gfd_ip):
     print(f"GFD: {member_count} members") # initial print 
-    host = '172.25.124.31' # TODO: replace with real IP address of GFD
+    host = gfd_ip #'172.25.124.31' # TODO: replace with real IP address of GFD
     port = 6881
    
     print(f"Listening on {host}:{port}")
@@ -76,4 +76,5 @@ def run_GFD():
     
 
 if __name__ == "__main__":
-    run_GFD()
+    gfd_ip = sys.argv[1] 
+    run_GFD(gfd_ip)

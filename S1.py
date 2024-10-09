@@ -56,12 +56,12 @@ def client_handler(client_socket, addr, my_state, server_id):
         client_socket.close()
         print(f"Connection to client ({addr[0]}:{addr[1]}) closed")
 
-def run_server(server_id, port):
+def run_server(server_id, port, server_ip):
    
     my_state = {"C1": 0, "C2": 0, "C3": 0}
     
     # establish connection with clients and LFD
-    host = '172.25.112.1'
+    host = server_ip 
 
     try:
         # initialize server
@@ -86,6 +86,8 @@ if __name__ == "__main__":
     # Pass server ID and port number
     server_id = sys.argv[1] # server id: S1
     port = int(sys.argv[2]) # port: 6000
-    run_server(server_id, port)
+    server_ip = sys.argv[3]
+
+    run_server(server_id, port, server_ip)
 
 

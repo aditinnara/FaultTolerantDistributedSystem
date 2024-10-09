@@ -141,13 +141,13 @@ def send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout, 
 
 
 
-def run_LFD(lfd_name, s_name, port, heartbeat_freq):
+def run_LFD(lfd_name, s_name, port, heartbeat_freq, gfd_ip, server_ip):
     heartbeat_timeout = 2 * heartbeat_freq
 
     # Connect with GFD
     gfd_socket = socket.socket()
     gfd_port = 6881
-    gfd_ip = '172.25.124.31'  # TODO: replace with real GFD IP address
+    # gfd_ip = '172.25.124.31'  # TODO: replace with real GFD IP address
     gfd_socket.connect((gfd_ip, gfd_port))
 
     # send GFD heartbeats in a thread
@@ -160,8 +160,8 @@ def run_LFD(lfd_name, s_name, port, heartbeat_freq):
             s_socket = socket.socket()
             s_socket.settimeout(heartbeat_timeout)
             s_port = port  
-            s_ip = '172.25.112.1'
-            s_socket.connect((s_ip, s_port))
+            # s_ip = '172.25.112.1'
+            s_socket.connect((server_ip, s_port))
 
             send_receive_check_heartbeat(s_socket, heartbeat_freq, heartbeat_timeout, gfd_socket, lfd_name, s_name)
 
@@ -171,19 +171,30 @@ def run_LFD(lfd_name, s_name, port, heartbeat_freq):
         except KeyboardInterrupt:
             print("KeyboardInterrupt: Exiting...")
             s_socket.close() # Close the socket
+            gfd_socket.close()
             break 
 
 def send_gfd_heartbeat_loop(gfd_socket, lfd_name, heartbeat_freq):
     global gfd_heartbeat_count
     while True:
-        # Send GFD heartbeats
-        send_gfd_heartbeat(gfd_socket, lfd_name, "GFD")
-        receive_gfd_messages(gfd_socket, lfd_name)
-        sleep(heartbeat_freq)
+        try:
+            # Send GFD heartbeats
+            send_gfd_heartbeat(gfd_socket, lfd_name, "GFD")
+            receive_gfd_messages(gfd_socket, lfd_name)
+            sleep(heartbeat_freq)
+        except Exception as e:
+            print("Error in GFD heartbeat loop: ", e)
+            break 
+        except KeyboardInterrupt:
+            print("KeyboardInterrupt: Exiting...")
+            gfd_socket.close()
+            break
 
 if __name__ == "__main__":
     lfd_name = sys.argv[1]  # LFD1
     s_name = sys.argv[2]    # S1
     port = int(sys.argv[3])    # 6000    # TODO: is this how you do it????
     heartbeat_freq = int(sys.argv[4])  # heartbeat frequency -- x secs
-    run_LFD(lfd_name, s_name, port, heartbeat_freq)
+    gfd_ip = sys.argv[5] #gfd ip address
+    server_ip = sys.argv[6] #server ip address
+    run_LFD(lfd_name, s_name, port, heartbeat_freq, gfd_ip, server_ip)
