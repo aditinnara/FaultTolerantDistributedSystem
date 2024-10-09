@@ -7,13 +7,13 @@ import threading
 
 last_request_num = 0
     
-def run_client(client_id, client_freq, server_id, server_port, mutex, server_ip):
+def run_client(client_id, client_freq, server_id, server_ip, mutex):
     global last_request_num
 
     c = socket.socket()
 
-    s1_ip = server_ip # TODO: replace with real IP address
-    c.connect((s1_ip, server_port))
+    # s1_ip = server_ip # TODO: replace with real IP address
+    c.connect((server_ip, 8000))
     # initialize request number
     c_request_num = 0
 
@@ -74,12 +74,11 @@ if __name__ == "__main__":
     # give the client id as a commandline parameter AND the frequency with which client should send messages
     client_id = int(sys.argv[1])
     client_freq = int(sys.argv[2])
-    server_ip = sys.argv[3] 
     replica_num = 3
     # These are the ports the servers will be running on
-    server_ports = [6000, 7000, 8000]
+    server_ips = [sys.argv[4], sys.argv[5], sys.argv[6]]
     # Use a thread for each server
     mutex = threading.Lock() # ensure mutual exclusion access to shared variable last_request_num
     for i in range(replica_num):
-        client_thread = threading.Thread(target=run_client, args=(client_id, client_freq, i+1, server_ports[i], mutex, server_ip,))
+        client_thread = threading.Thread(target=run_client, args=(client_id, client_freq, i+1, server_ips[i], mutex,))
         client_thread.start()
