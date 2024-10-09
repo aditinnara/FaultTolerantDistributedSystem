@@ -12,7 +12,7 @@ def run_client(client_id, client_freq, server_id, server_port, mutex):
 
     c = socket.socket()
 
-    s1_ip = '127.0.0.1' # TODO: replace with real IP address
+    s1_ip = '172.25.112.1' # TODO: replace with real IP address
     c.connect((s1_ip, server_port))
     # initialize request number
     c_request_num = 0

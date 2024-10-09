@@ -147,7 +147,7 @@ def run_LFD(lfd_name, s_name, port, heartbeat_freq):
     # Connect with GFD
     gfd_socket = socket.socket()
     gfd_port = 6881
-    gfd_ip = '127.0.0.1'  # TODO: replace with real GFD IP address
+    gfd_ip = '172.25.124.31'  # TODO: replace with real GFD IP address
     gfd_socket.connect((gfd_ip, gfd_port))
 
     # send GFD heartbeats in a thread
@@ -160,7 +160,7 @@ def run_LFD(lfd_name, s_name, port, heartbeat_freq):
             s_socket = socket.socket()
             s_socket.settimeout(heartbeat_timeout)
             s_port = port  
-            s_ip = '127.0.0.1'
+            s_ip = '172.25.112.1'
             s_socket.connect((s_ip, s_port))
 
             send_receive_check_heartbeat(s_socket, heartbeat_freq, heartbeat_timeout, gfd_socket, lfd_name, s_name)
@@ -171,6 +171,7 @@ def run_LFD(lfd_name, s_name, port, heartbeat_freq):
         except KeyboardInterrupt:
             print("KeyboardInterrupt: Exiting...")
             s_socket.close() # Close the socket
+            break 
 
 def send_gfd_heartbeat_loop(gfd_socket, lfd_name, heartbeat_freq):
     global gfd_heartbeat_count

@@ -61,7 +61,7 @@ def run_server(server_id, port):
     my_state = {"C1": 0, "C2": 0, "C3": 0}
     
     # establish connection with clients and LFD
-    host = '127.0.0.1'
+    host = '172.25.112.1'
 
     try:
         # initialize server

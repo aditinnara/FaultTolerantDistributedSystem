@@ -53,7 +53,7 @@ def lfd_handler(lfd_socket, addr):
 
 def run_GFD():
     print(f"GFD: {member_count} members") # initial print 
-    host = '127.0.0.1' # TODO: replace with real IP address of GFD
+    host = '172.25.124.31' # TODO: replace with real IP address of GFD
     port = 6881
    
     print(f"Listening on {host}:{port}")
