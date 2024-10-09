@@ -76,7 +76,7 @@ if __name__ == "__main__":
     client_freq = int(sys.argv[2])
     replica_num = 3
     # These are the ports the servers will be running on
-    server_ips = [sys.argv[4], sys.argv[5], sys.argv[6]]
+    server_ips = [sys.argv[3], sys.argv[4], sys.argv[5]]
     # Use a thread for each server
     mutex = threading.Lock() # ensure mutual exclusion access to shared variable last_request_num
     for i in range(replica_num):
