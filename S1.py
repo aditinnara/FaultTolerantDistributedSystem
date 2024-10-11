@@ -89,7 +89,6 @@ def run_server(server_id, port, server_ip):
         print("connection lost from the client")
     finally:
         server_socket.close()
-        client_thread.close() 
 
 if __name__ == "__main__":
     # Pass server ID and port number
