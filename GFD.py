@@ -33,7 +33,7 @@ def lfd_handler(lfd_socket, addr):
                 member_count += 1
                 membership.add(added_server) 
                 print(f"\033[1;32mAdding server {added_server}...\033[0m")
-                print(f"\033[1;32mGFD: {member_count} members: {', '.join(membership)}\033[0m")
+                print(f"\033[1;32mGFD: {member_count} members: {', '.join(sorted(list(membership)))}\033[0m")
             elif "delete replica" in request_split: # delete replica from membership 
                 sending_lfd = request_split[0].strip() # LFD1
                 removed_server = request_split[3].strip('>') # S1
@@ -41,7 +41,7 @@ def lfd_handler(lfd_socket, addr):
                     member_count -= 1
                     membership.remove(removed_server)
                     print(f"\033[1;31mRemoving server {removed_server}...\033[0m")
-                    print(f"\033[1;31mGFD: {member_count} members: {', '.join(list(sorted(membership)))}\033[0m")
+                    print(f"\033[1;31mGFD: {member_count} members: {', '.join(sorted(list(membership)))}\033[0m")
     except KeyboardInterrupt:
         print("KeyboardInterrupt: Exiting...")
         lfd_socket.close()
