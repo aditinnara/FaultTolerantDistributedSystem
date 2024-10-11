@@ -49,7 +49,10 @@ def client_handler(client_socket, addr, my_state, server_id):
                 
                 # send the reply
                 client_socket.sendall(reply.encode())
-
+    except KeyboardInterrupt:
+            print("KeyboardInterrupt: Exiting...")
+            client_socket.close() # Close the socket
+            return 
     except Exception as e:
         print(f"Error when handling client: {e}")
     finally:
@@ -62,6 +65,7 @@ def run_server(server_id, port, server_ip):
     
     # establish connection with clients and LFD
     host = server_ip 
+    num_client = 3
 
     try:
         # initialize server
@@ -76,11 +80,16 @@ def run_server(server_id, port, server_ip):
             print(f"Accepted connection from {addr[0]}:{addr[1]}")
             client_thread = threading.Thread(target=client_handler, args=(client_sock, addr, my_state, server_id))
             client_thread.start()
-
+    except KeyboardInterrupt:
+            print("KeyboardInterrupt: Exiting...")
+            server_socket.close() # Close the socket
+            return 
     except Exception as e:
         print(f"Error: {e}")
+        print("connection lost from the client")
     finally:
         server_socket.close()
+        client_thread.close() 
 
 if __name__ == "__main__":
     # Pass server ID and port number

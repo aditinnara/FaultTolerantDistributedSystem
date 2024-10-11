@@ -5,7 +5,7 @@ from time import localtime, strftime, time, sleep
 import sys
 import threading
 
-membership = []
+membership = set()
 member_count = 0
 
 def lfd_handler(lfd_socket, addr):
@@ -31,7 +31,7 @@ def lfd_handler(lfd_socket, addr):
                 sending_lfd = request_split[0].strip() # LFD1
                 added_server = request_split[3].strip('>') # S1
                 member_count += 1
-                membership.append(added_server) 
+                membership.add(added_server) 
                 print(f"\033[1;32mAdding server {added_server}...\033[0m")
                 print(f"\033[1;32mGFD: {member_count} members: {', '.join(membership)}\033[0m")
             elif "delete replica" in request_split: # delete replica from membership 
@@ -41,8 +41,11 @@ def lfd_handler(lfd_socket, addr):
                     member_count -= 1
                     membership.remove(removed_server)
                     print(f"\033[1;31mRemoving server {removed_server}...\033[0m")
-                    print(f"\033[1;31mGFD: {member_count} members: {', '.join(membership)}\033[0m")
-
+                    print(f"\033[1;31mGFD: {member_count} members: {', '.join(list(sorted(membership)))}\033[0m")
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt: Exiting...")
+        lfd_socket.close()
+        return 
     except Exception as e:
         print(e)
         pass
@@ -69,6 +72,10 @@ def run_GFD(gfd_ip):
             print(f"Accepted connection from {addr[0]}:{addr[1]}")
             lfd_thread = threading.Thread(target=lfd_handler, args=(lfd_sock, addr))
             lfd_thread.start()
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt: Exiting...")
+        gfd_socket.close()
+        return 
     except Exception as e:
         print(f"Error: {e}")
     finally:

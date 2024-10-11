@@ -164,15 +164,16 @@ def run_LFD(lfd_name, s_name, port, heartbeat_freq, gfd_ip, server_ip):
             s_socket.connect((server_ip, s_port))
 
             send_receive_check_heartbeat(s_socket, heartbeat_freq, heartbeat_timeout, gfd_socket, lfd_name, s_name)
-
-        except Exception as e:  
-            print("No new connections...: ", e)
-            sleep(heartbeat_timeout)  # Sleep before retrying the connection
         except KeyboardInterrupt:
             print("KeyboardInterrupt: Exiting...")
             s_socket.close() # Close the socket
             gfd_socket.close()
-            break 
+            gfd_heartbeat_thread.close() 
+            return 
+        except Exception as e:  
+            print("No server connection...")
+            sleep(heartbeat_timeout)  # Sleep before retrying the connection
+        
 
 def send_gfd_heartbeat_loop(gfd_socket, lfd_name, heartbeat_freq):
     global gfd_heartbeat_count
@@ -182,13 +183,14 @@ def send_gfd_heartbeat_loop(gfd_socket, lfd_name, heartbeat_freq):
             send_gfd_heartbeat(gfd_socket, lfd_name, "GFD")
             receive_gfd_messages(gfd_socket, lfd_name)
             sleep(heartbeat_freq)
-        except Exception as e:
-            print("Error in GFD heartbeat loop: ", e)
-            break 
         except KeyboardInterrupt:
             print("KeyboardInterrupt: Exiting...")
             gfd_socket.close()
-            break
+            return 
+        except Exception as e:
+            print("Error in GFD heartbeat loop... ")
+            break 
+        
 
 if __name__ == "__main__":
     lfd_name = sys.argv[1]  # LFD1
