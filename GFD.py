@@ -72,6 +72,7 @@ def run_GFD(gfd_ip):
     except Exception as e:
         print(f"Error: {e}")
     finally:
+        print('hi')
         gfd_socket.close()
     
 

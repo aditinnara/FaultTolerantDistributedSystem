@@ -5,18 +5,36 @@ import select
 import threading
 
 # as a primary, checkpoint the backups given a checkpointing frequency
-def checkpoint_backups(backup_servers, checkpt_freq, my_state, server_id):
+def checkpoint_backups(backup_ip, backup_port, checkpt_freq, server_id):
+    
+    connected = False
+    # connect to the backup server
+    while not connected:
+        try:
+            backup_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            backup_socket.connect((backup_ip, backup_port))
+            print(f"{server_id} connected to backup server at {backup_ip}:{backup_port}")
+            connected = True
+        except Exception as e:
+            print(f"Error connecting to backup server: {e}")
+            backup_socket.close()
+            sleep(3)
+    
+    # send checkpoint to the backup server
+
     checkpoint_count = 0
+    
     while True:
-        for backup_socket in backup_servers:
-            checkpoint_msg = f"<{server_id}, {checkpoint_count}, checkpoint, {my_state}>"
-            backup_socket.sendall(checkpoint_msg.encode())
-            print(f"\033[1;32m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [CHECKPOINT NUM {checkpoint_count}] {server_id} sending checkpoint {my_state} to backup server\033[0m")
+        global my_state 
+        print("CHECKPOINTING BACKUPS")
+        checkpoint_msg = f"<{server_id}, {checkpoint_count}, checkpoint, {my_state}>"
+        backup_socket.sendall(checkpoint_msg.encode())
+        print(f"\033[1;32m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [CHECKPOINT NUM {checkpoint_count}] {server_id} sending checkpoint {my_state} to backup server\033[0m")
         checkpoint_count += 1
         sleep(checkpt_freq)
 
 # as a backup, receive checkpoint from primary
-def receive_checkpoints(backup_socket, my_state, server_id):
+def receive_checkpoints(backup_socket, server_id):
         checkpoint_count = 0
         while True:
             to_read_buffer, _, _ = select.select([backup_socket], [], [], 1 / 10) # 1/10 is arbitrary frequency for nonblocking op
@@ -34,6 +52,7 @@ def receive_checkpoints(backup_socket, my_state, server_id):
 
                         # update state and checkpt counter
                         checkpoint_count = received_checkpoint_count
+                        global my_state 
                         my_state.update(received_state)  
 
                         # print checkpoint
@@ -43,7 +62,7 @@ def receive_checkpoints(backup_socket, my_state, server_id):
                     pass
 
 
-def client_handler(client_socket, addr, my_state, server_id, primary_bool):
+def client_handler(client_socket, addr, server_id, primary_bool):
     try:
         while True:
             request = client_socket.recv(1024).decode("utf-8")
@@ -69,6 +88,7 @@ def client_handler(client_socket, addr, my_state, server_id, primary_bool):
                 print(f"\033[1;38;5;214m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] Received {request}\033[0m")
                 
                 if primary_bool == 1:
+                    global my_state
                     client_id = request_split[0]  
                     request_num = int(request_split[2])
 
@@ -100,33 +120,29 @@ def client_handler(client_socket, addr, my_state, server_id, primary_bool):
         print(f"Connection to client ({addr[0]}:{addr[1]}) closed")
 
 def run_server(server_id, port, server_ip, primary_bool, checkpt_freq):
-   
+    global my_state 
     my_state = {"C1": 0, "C2": 0, "C3": 0}
+    
     
     # establish connection with clients and LFD
     host = server_ip 
 
     # establish "back channel" communication from primary to backups (ONLY IF this server is primary)
     if primary_bool == 1:
-        backups = [("127.0.0.1", 7001), ("127.0.0.1", 7002)]  # ips of backups and ports of backups, fix this
+        backups = [("127.0.0.1", 6001), ("127.0.0.1", 6002)]  # ips of backups and ports of backups, fix this
         backup_servers = []
-        for backup in backups:
-            backup_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            backup_socket.connect(backup)
-            backup_servers.append(backup_socket)
-            print(f"{server_id} connected to backup server at {backup[0]}:{backup[1]}")
-        
-            # thread for checkpointing the backups
-            if primary_bool == 1:
-                # i THINK we're passing my_state here by reference -- so when client_handler modifies my_state, this will get sent to thebackups
-                primary_checkpt_thread = threading.Thread(target=checkpoint_backups, args=(backup_servers, checkpt_freq, my_state, server_id))
-                primary_checkpt_thread.start()
+        for backup_ip, backup_port in backups:
+            primary_checkpt_thread = threading.Thread(target=checkpoint_backups, args=(backup_ip, backup_port, checkpt_freq, server_id))
+            primary_checkpt_thread.start()
+
     else:
         backup_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        backup_socket.connect(("127.0.0.1", 6000))  # PRIMARY's IP and port!!! fix this
-
-        receive_checkpt_thread = threading.Thread(target=receive_checkpoints, args=(backup_socket, my_state, server_id))
-        receive_checkpt_thread.start()
+        try:
+            backup_socket.connect(("127.0.0.1", 6000))  # PRIMARY's IP and port!!! fix this
+            receive_checkpt_thread = threading.Thread(target=receive_checkpoints, args=(backup_socket, server_id))
+            receive_checkpt_thread.start()
+        except:
+            print(f"Error connecting to primary server")
 
     try:
         # initialize server
@@ -139,7 +155,7 @@ def run_server(server_id, port, server_ip, primary_bool, checkpt_freq):
             # accept a client and start a new thread for each connection
             client_sock, addr = server_socket.accept()
             print(f"Accepted connection from {addr[0]}:{addr[1]}")
-            client_thread = threading.Thread(target=client_handler, args=(client_sock, addr, my_state, server_id, primary_bool))
+            client_thread = threading.Thread(target=client_handler, args=(client_sock, addr, server_id, primary_bool))
             client_thread.start()
 
 

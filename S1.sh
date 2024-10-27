@@ -4,4 +4,4 @@
 #server id, port, server ip, primary/backup(1/0), checkpoint frequency
 
 echo "running server 1" 
-python3 server.py S1 6000 172.19.190.89 1 10 
+python3 server.py S1 6000 172.19.190.89 1 5
