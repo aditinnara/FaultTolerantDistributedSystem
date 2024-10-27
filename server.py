@@ -154,9 +154,10 @@ if __name__ == "__main__":
     port = int(sys.argv[2]) # port: 6000
     server_ip = sys.argv[3]
     primary_bool = int(sys.argv[4]) # if it's a primary (1) or backup (0)
+    checkpt_freq = 10 # default checkpoint frequency
     if primary_bool:
         checkpt_freq = sys.argv[5]  # only if this is a primary 
 
-    run_server(server_id, port, server_ip, primary_bool)
+    run_server(server_id, port, server_ip, primary_bool, checkpt_freq)
 
 
