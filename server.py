@@ -125,6 +125,7 @@ def run_server(server_id, port, server_ip, primary_bool, checkpt_freq):
     
     # establish connection with clients and LFD
     host = server_ip 
+    # TODO: Port number for backup, change it
     backup_port = 6001
 
     # Establish "back channel" communication from primary to backups (ONLY IF this server is primary)
@@ -137,6 +138,7 @@ def run_server(server_id, port, server_ip, primary_bool, checkpt_freq):
 
     else: # Backup
         backup_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # bind socket with server IP and back_up port
         backup_socket.bind((host, backup_port))
         # open backup socket to listen for primary connection
         backup_socket.listen(1) # can listen for 1 connection: Primary
@@ -150,6 +152,7 @@ def run_server(server_id, port, server_ip, primary_bool, checkpt_freq):
         except:
             print(f"Error connecting to primary server")
 
+    # Establish connection with clients and LFD
     try:
         # initialize server
         server_socket = socket.socket()
@@ -174,9 +177,11 @@ def run_server(server_id, port, server_ip, primary_bool, checkpt_freq):
         server_socket.close()
 
 if __name__ == "__main__":
-    # Pass server ID and port number
+    # Command: python3 server.py <server_ID> <client_port_number> <server_IP> <primary_bool> <checkpoint_freq>
+    # TODO: specify backup_port_number as well?
+    
     server_id = sys.argv[1] # server id: S1
-    port = int(sys.argv[2]) # port: 6000
+    port = int(sys.argv[2]) # client port number
     server_ip = sys.argv[3]
     primary_bool = int(sys.argv[4]) # if it's a primary (1) or backup (0)
     checkpt_freq = 10 # default checkpoint frequency
