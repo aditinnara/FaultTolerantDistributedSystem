@@ -27,7 +27,7 @@ def checkpoint_backups(backup_ip, backup_port, checkpt_freq, server_id):
     while True:
         global my_state 
         print("CHECKPOINTING BACKUPS")
-        checkpoint_msg = f"<{server_id}, {checkpoint_count}, checkpoint, {my_state}>"
+        checkpoint_msg = f"<{server_id}-{checkpoint_count}-checkpoint-{my_state}>" # joined with - instead of ,
         backup_socket.sendall(checkpoint_msg.encode())
         print(f"\033[1;32m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [CHECKPOINT NUM {checkpoint_count}] {server_id} sending checkpoint {my_state} to backup server\033[0m")
         checkpoint_count += 1
@@ -45,7 +45,7 @@ def receive_checkpoints(backup_socket, server_id):
                     # non-blocking for receiving a heartbeat ACK from GFD
 
                     if checkpoint_msg:
-                        checkpoint_msg = checkpoint_msg.strip('<>').split(', ')
+                        checkpoint_msg = checkpoint_msg.strip('<>').split('-') # delimeter can't be part of string form of dist
                         received_server_id = checkpoint_msg[0]
                         received_checkpoint_count = int(checkpoint_msg[1])
                         received_state = eval(checkpoint_msg[3])  # turn state into dict from string
@@ -58,8 +58,7 @@ def receive_checkpoints(backup_socket, server_id):
                         # print checkpoint
                         print(f"\033[1;36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [RECEIVED CHECKPOINT NUM {checkpoint_count}] {server_id} updated state to {my_state} from {received_server_id}\033[0m")
                 except Exception as e:
-                    # if we don't have anything from the primary, just pass
-                    pass
+                    print(f"Error when hearing from primary: {e}")
 
 
 def client_handler(client_socket, addr, server_id, primary_bool):
@@ -126,20 +125,27 @@ def run_server(server_id, port, server_ip, primary_bool, checkpt_freq):
     
     # establish connection with clients and LFD
     host = server_ip 
+    backup_port = 6001
 
-    # establish "back channel" communication from primary to backups (ONLY IF this server is primary)
-    if primary_bool == 1:
-        backups = [("127.0.0.1", 6001), ("127.0.0.1", 6002)]  # ips of backups and ports of backups, fix this
-        backup_servers = []
+    # Establish "back channel" communication from primary to backups (ONLY IF this server is primary)
+    # For backup, use port other than the client port for the primary to connect
+    if primary_bool == 1: # Primary
+        backups = [("127.0.0.1", 6001)]  # TODO: ips of backups and ports of backups, fix this
         for backup_ip, backup_port in backups:
             primary_checkpt_thread = threading.Thread(target=checkpoint_backups, args=(backup_ip, backup_port, checkpt_freq, server_id))
             primary_checkpt_thread.start()
 
-    else:
+    else: # Backup
         backup_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        backup_socket.bind((host, backup_port))
+        # open backup socket to listen for primary connection
+        backup_socket.listen(1) # can listen for 1 connection: Primary
+        print(f"Backup {server_id} Listening on {host}:{backup_port}")
+
         try:
-            backup_socket.connect(("127.0.0.1", 6000))  # PRIMARY's IP and port!!! fix this
-            receive_checkpt_thread = threading.Thread(target=receive_checkpoints, args=(backup_socket, server_id))
+            primary_sock, primary_addr = backup_socket.accept()
+            print(f"Accepted primary connection from {primary_addr[0]}:{primary_addr[1]}")
+            receive_checkpt_thread = threading.Thread(target=receive_checkpoints, args=(primary_sock, server_id))
             receive_checkpt_thread.start()
         except:
             print(f"Error connecting to primary server")
@@ -162,6 +168,9 @@ def run_server(server_id, port, server_ip, primary_bool, checkpt_freq):
     except Exception as e:
         print(f"Error: {e}")
     finally:
+        # clean up
+        if not primary_bool:
+            backup_socket.close()
         server_socket.close()
 
 if __name__ == "__main__":
@@ -172,7 +181,7 @@ if __name__ == "__main__":
     primary_bool = int(sys.argv[4]) # if it's a primary (1) or backup (0)
     checkpt_freq = 10 # default checkpoint frequency
     if primary_bool:
-        checkpt_freq = sys.argv[5]  # only if this is a primary 
+        checkpt_freq = int(sys.argv[5])  # only if this is a primary 
 
     run_server(server_id, port, server_ip, primary_bool, checkpt_freq)
 
