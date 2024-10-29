@@ -191,10 +191,33 @@ def send_gfd_heartbeat_loop(gfd_socket, lfd_name, heartbeat_freq):
             break
 
 if __name__ == "__main__":
-    lfd_name = sys.argv[1]  # LFD1
-    s_name = sys.argv[2]    # S1
-    port = int(sys.argv[3])    # 6000    # TODO: is this how you do it????
-    heartbeat_freq = int(sys.argv[4])  # heartbeat frequency -- x secs
-    gfd_ip = sys.argv[5] #gfd ip address
-    server_ip = sys.argv[6] #server ip address
+    # lfd_name = sys.argv[1]  # LFD1
+    # s_name = sys.argv[2]    # S1
+    # port = int(sys.argv[3])    # 6000    # TODO: is this how you do it????
+    # heartbeat_freq = int(sys.argv[4])  # heartbeat frequency -- x secs
+    # gfd_ip = sys.argv[5] #gfd ip address
+    # server_ip = sys.argv[6] #server ip address
+    
+    
+    #Command: python3 LFD.py <lfd_index (1,2,3)> <heartbeat_freq> <gfd_ip> <server_ip> 
+    
+    lfd_index = int(sys.argv[1])    # S1
+    heartbeat_freq = int(sys.argv[2])  # heartbeat frequency -- x secs
+    gfd_ip = sys.argv[3] #gfd ip address
+    server_ip = sys.argv[4] #server ip address
+    
+    if lfd_index == 1:
+        lfd_name = "LFD1"
+        s_name = "S1"
+        port = 6000
+    elif lfd_index == 2:
+        lfd_name = "LFD2"
+        s_name = "S2"
+        port = 6001
+    elif lfd_index == 3:
+        lfd_name = "LFD3"
+        s_name = "S3"
+        port = 6002
+    else:
+        print("Wrong input command")
     run_LFD(lfd_name, s_name, port, heartbeat_freq, gfd_ip, server_ip)

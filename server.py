@@ -118,7 +118,7 @@ def client_handler(client_socket, addr, server_id, primary_bool):
         client_socket.close()
         print(f"Connection to client ({addr[0]}:{addr[1]}) closed")
 
-def run_server(server_id, port, server_ip, primary_bool, checkpt_freq):
+def run_server(server_id, port, server_ip, backup_ips, primary_bool, checkpt_freq, backup_port):
     global my_state 
     my_state = {"C1": 0, "C2": 0, "C3": 0}
     
@@ -126,13 +126,13 @@ def run_server(server_id, port, server_ip, primary_bool, checkpt_freq):
     # establish connection with clients and LFD
     host = server_ip 
     # TODO: Port number for backup, change it
-    backup_port = 6001
+
 
     # Establish "back channel" communication from primary to backups (ONLY IF this server is primary)
     # For backup, use port other than the client port for the primary to connect
     if primary_bool == 1: # Primary
-        backups = [("127.0.0.1", 6001)]  # TODO: ips of backups and ports of backups, fix this
-        for backup_ip, backup_port in backups:
+        for i, backup_ip in enumerate(backup_ips):
+            backup_port = 7000+i+1
             primary_checkpt_thread = threading.Thread(target=checkpoint_backups, args=(backup_ip, backup_port, checkpt_freq, server_id))
             primary_checkpt_thread.start()
 
@@ -180,14 +180,39 @@ if __name__ == "__main__":
     # Command: python3 server.py <server_ID> <client_port_number> <server_IP> <primary_bool> <checkpoint_freq>
     # TODO: specify backup_port_number as well?
     
-    server_id = sys.argv[1] # server id: S1
-    port = int(sys.argv[2]) # client port number
-    server_ip = sys.argv[3]
-    primary_bool = int(sys.argv[4]) # if it's a primary (1) or backup (0)
-    checkpt_freq = 10 # default checkpoint frequency
-    if primary_bool:
-        checkpt_freq = int(sys.argv[5])  # only if this is a primary 
-
-    run_server(server_id, port, server_ip, primary_bool, checkpt_freq)
+    # server_id = sys.argv[1] # server id: S1
+    # port = int(sys.argv[2]) # client port number
+    # server_ip = sys.argv[3]
+    # primary_bool = int(sys.argv[4]) # if it's a primary (1) or backup (0)
+    # checkpt_freq = 10 # default checkpoint frequency
+    # if primary_bool:
+    #     checkpt_freq = int(sys.argv[5])  # only if this is a primary 
+        
+    # Command: python3 server.py <server_index (1,2,3)> <checkpoint_freq> <server_ip1> <server_ip2> <server_ip3> 
+    server_index = int(sys.argv[1])
+    checkpt_freq = int(sys.argv[2])  
+    backup_ips = [sys.argv[4], sys.argv[5]]
+    
+    if server_index == 1:
+        server_id = "S1"
+        server_ip = sys.argv[3]
+        primary_bool = 1
+        backup_port = 7000
+        port = 6000
+    elif server_index == 2:
+        server_id = "S2"
+        server_ip = sys.argv[4]
+        primary_bool = 0
+        backup_port = 7001
+        port = 6001
+    elif server_index == 3:
+        server_id = "S3"
+        server_ip = sys.argv[5]
+        primary_bool = 0
+        backup_port = 7002
+        port = 6002
+    else:
+        print("Wrong input command")
+    run_server(server_id, port, server_ip, backup_ips, primary_bool, checkpt_freq, backup_port)
 
 
