@@ -1,8 +1,7 @@
 #!/bin/sh
 
 #run server 2 (passive replica)
-#server id, port, server ip, primary/backup(1/0), checkpoint frequency
+#python3 server.py <server_index (1,2,3)> <checkpoint_freq> <server_ip1> <server_ip2> <server_ip3> 
 
-echo "running server 2" 
-#python3 server.py S2 6001 172.19.190.89 0
+echo "running server 2"
 python3 server.py 2 5 172.26.80.245 172.26.80.245 172.26.80.245

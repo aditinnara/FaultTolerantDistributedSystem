@@ -1,8 +1,7 @@
 #!/bin/sh
 
 #run LFD2
-#LFD name, server name, port, heartbeat frequency, gfd ip, server ip
+#python3 LFD.py <lfd_index (1,2,3)> <heartbeat_freq> <gfd_ip> <server_ip> 
 
 echo "running LFD2" 
-#python3 LFD.py LFD2 S2 6001 3 172.19.190.89 172.19.190.89
 python3 LFD.py 2 3 172.26.80.245 172.26.80.245
