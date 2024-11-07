@@ -18,6 +18,8 @@ def gfd_handler(gfd_socket, addr):
             # Notice for addition/removal of servers
             if "add replica" in request_split:
                 added_server = request_split[3].strip('>')
+                if added_server in membership:
+                    continue # ignore duplicates
                 member_count += 1
                 membership.append(added_server)
                 # elect primary
