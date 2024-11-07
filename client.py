@@ -19,7 +19,7 @@ def run_client(client_id, client_freq, server_id, server_ip, mutex, server_port)
     while True:
         try:
             if not connected:
-                print(f"Connecting to server {server_id}...")
+                #print(f"Connecting to server {server_id}...")
                 c = socket.socket()
                 s1_ip = server_ip # TODO: replace with real IP address
                 c.connect((s1_ip, server_port))
