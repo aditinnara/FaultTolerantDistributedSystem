@@ -51,18 +51,21 @@ def receive_gfd_messages(gfd_socket, lfd_name, s_name):
             gfd_message = gfd_socket.recv(1024).decode("utf-8")
             # non-blocking for receiving a heartbeat ACK from GFD
             if gfd_message:
-                gfd_message_split = gfd_message.strip('<').strip('>').split(',')
-                print(gfd_message_split)
+                gfd_message_split = gfd_message.split("@")
+                # print(gfd_message)
+                # gfd_message_split = gfd_message.strip('<').strip('>').split(',')
+                # print(gfd_message_split)
                 # new primary election from RM->GFD->LFD
-                if "new primary" in gfd_message_split:
-                    new_primary = gfd_message_split[-1].strip('>')
-                    print(f"GFD to {lfd_name}: {new_primary} is the New Primary")
-                    new_primary_text = f"<{lfd_name},{s_name},new primary,{new_primary}>"
-                    s_socket.sendall(new_primary_text.encode())
-                    print(f"{lfd_name} to {s_name}: {new_primary} is the New Primary")
-                else:
-                    heartbeat_count_str = gfd_message.strip('<').split(',')[2].strip()
-                    print(f"\033[36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count_str}] {lfd_name} received heartbeat ACK from GFD\033[0m")
+                for msg in gfd_message_split:
+                    if "new primary" in msg:
+                        new_primary = msg[-1].strip('>')
+                        print(f"GFD to {lfd_name}: {new_primary} is the New Primary")
+                        new_primary_text = f"<{lfd_name},{s_name},new primary,{new_primary}>"
+                        s_socket.sendall(new_primary_text.encode())
+                        print(f"{lfd_name} to {s_name}: {new_primary} is the New Primary")
+                    if "heartbeat" in msg:
+                        heartbeat_count_str = gfd_message.strip('<').split(',')[2].strip()
+                        print(f"\033[36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count_str}] {lfd_name} received heartbeat ACK from GFD\033[0m")
         except Exception as e:
             print(f"exception: {e}")
             pass

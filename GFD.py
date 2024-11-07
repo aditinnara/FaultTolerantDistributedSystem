@@ -18,7 +18,7 @@ def rm_handler(rm_socket, gfd_name):
             if "new primary" in request_split: 
                 new_primary = request_split[3].strip('>')
                 for server in lfd_sockets:
-                    new_primary_text = f"<GFD,LFD,new primary,{new_primary}>"
+                    new_primary_text = f"<GFD,LFD,new primary,{new_primary}>@"
                     lfd_sockets[server].sendall(new_primary_text.encode())
                     print(f"GFD to {server}: New primary is {new_primary}")
     except Exception as e:
