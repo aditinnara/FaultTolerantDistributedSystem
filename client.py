@@ -4,6 +4,7 @@ import socket
 from time import localtime, strftime, time, sleep
 import sys
 import threading
+import select
 
 last_request_num = -1
     
@@ -23,7 +24,6 @@ def run_client(client_id, client_freq, server_id, server_ip, mutex, server_port)
                 s1_ip = server_ip # TODO: replace with real IP address
                 c.connect((s1_ip, server_port))
                 print(f"Connected to server {server_id}!")
-                c.setblocking(0) # non blocking waiting for data from back up servers
                 connected = True 
             # request = <C1, S1, request_num, request> 
             request_str = f"<C{client_id},S{server_id},{c_request_num},Hello Server!>"
@@ -37,34 +37,33 @@ def run_client(client_id, client_freq, server_id, server_ip, mutex, server_port)
             sent_timestamp_str = strftime("%Y-%m-%d %H:%M:%S", localtime())
             print(f"\033[1;38;5;214m[{sent_timestamp_str}] Sent {request_str}\033[0m")
 
-            reply = c.recv(1024).decode()
+            to_read_buffer, _, _ = select.select([c], [], [], 1 / 10) # 1/10 is arbitrary frequency for nonblocking op
+            if to_read_buffer:
+                reply = c.recv(1024).decode()
+                recv_timestamp_str = strftime("%Y-%m-%d %H:%M:%S", localtime())
+                # print receipts of all responses
+                print(f"\033[38;5;214m[{recv_timestamp_str}] Received {reply}\033[0m")
 
-            recv_timestamp_str = strftime("%Y-%m-%d %H:%M:%S", localtime())
-            # print receipts of all responses
-            print(f"\033[38;5;214m[{recv_timestamp_str}] Received {reply}\033[0m")
+                #       Only print this for one of the servers' responses -- suppress duplicates by keeping 
+                #       track of the last received request_num, and suppressing dups OR if received request_num
+                #       is greater than the request num that we just sent. Is this the correct logic?
+                reply_split = reply.strip('<').split(',') # reply = <client_id, server_id, request_num, reply>  
 
-            #       Only print this for one of the servers' responses -- suppress duplicates by keeping 
-            #       track of the last received request_num, and suppressing dups OR if received request_num
-            #       is greater than the request num that we just sent. Is this the correct logic?
-            reply_split = reply.strip('<').split(',') # reply = <client_id, server_id, request_num, reply>  
+                request_num = int((reply_split[2]).strip())
 
+                reply_server = reply_split[1].strip()
 
-            request_num = int((reply_split[2]).strip())
+                # critical section in multithreading: mutate shared variables
+                with mutex:
+                    print("request_num: ", request_num, "last_request_num: ", last_request_num)
+                    if (request_num > last_request_num):
+                        last_request_num = request_num
+                    else:
+                        # discard duplicate responses
+                        print(f"\033[1;38;5;202m[Request Number {request_num}]: Discarded duplicate reply from {reply_server}\033[0m")
+                        
 
-
-            reply_server = reply_split[1].strip()
-
-
-            # critical section in multithreading: mutate shared variables
-            with mutex:
-                print("request_num: ", request_num, "last_request_num: ", last_request_num)
-                if (request_num > last_request_num):
-                    last_request_num = request_num
-                else:
-                    # discard duplicate responses
-                    print(f"\033[1;38;5;202m[Request Number {request_num}]: Discarded duplicate reply from {reply_server}\033[0m")
-            print(f"{server_id} bp3")
-                
+            
 
             # wait 2 seconds before sending another message
             sleep(client_freq)
