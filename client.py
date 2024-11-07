@@ -67,6 +67,17 @@ def run_client(client_id, client_freq, server_id, server_ip, mutex, server_port)
 
             # wait 2 seconds before sending another message
             sleep(client_freq)
+        #try reconnect to server after timeout
+        except (socket.timeout, socket.error) as e:
+            if connected == True:
+                #print(f"Connection to server {server_id} lost: {e}")
+                connected = False  
+                try:
+                    c.close()  
+                except:
+                    pass
+                print(f"Attempting to reconnect to server {server_id} in 3 seconds...")
+                sleep(3) 
         except Exception as e:
             print(e)
             connected = False
