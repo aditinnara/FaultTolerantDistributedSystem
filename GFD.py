@@ -8,8 +8,26 @@ import threading
 membership = []
 member_count = 0
 
-def lfd_handler(lfd_socket, addr, rm_socket):
+def rm_handler(rm_socket, gfd_name):
     global membership, member_count
+    try:
+        while True:
+            request = rm_socket.recv(1024).decode("utf-8")
+            request_split = request.strip('<').strip('>').split(',')
+
+            if "new primary" in request_split: 
+                new_primary = request_split[3].strip('>')
+                for server in lfd_sockets:
+                    new_primary_text = f"<GFD,LFD,new primary,{new_primary}>"
+                    lfd_sockets[server].sendall(new_primary_text.encode())
+                    print(f"GFD to {server}: New primary is {new_primary}")
+    except Exception as e:
+        print(e)
+        pass
+
+
+def lfd_handler(lfd_socket, addr, rm_socket):
+    global membership, member_count, lfd_sockets
     try:
         while True:
             request = lfd_socket.recv(1024).decode("utf-8")
@@ -29,10 +47,14 @@ def lfd_handler(lfd_socket, addr, rm_socket):
                 sending_lfd = request_split[0].strip() # LFD1
                 added_server = request_split[3].strip('>') # S1
                 member_count += 1
-                membership.append(added_server) 
+                membership.append(added_server)
+                # update lfd sockets
+                lfd_sockets[added_server] = lfd_socket
                 print(f"\033[1;32mAdding server {added_server}...\033[0m")
                 print(f"\033[1;32mGFD: {member_count} members: {', '.join(membership)}\033[0m")
-                rm_socket.sendall(', '.join(membership).encode()) # updates RM about membership change
+                # updates RM about membership change
+                add_text = f"<GFD,RM,add replica,{added_server}>"
+                rm_socket.sendall(add_text.encode())
             elif "delete replica" in request_split: # delete replica from membership 
                 sending_lfd = request_split[0].strip() # LFD1
                 removed_server = request_split[3].strip('>') # S1
@@ -41,7 +63,9 @@ def lfd_handler(lfd_socket, addr, rm_socket):
                     membership.remove(removed_server)
                     print(f"\033[1;31mRemoving server {removed_server}...\033[0m")
                     print(f"\033[1;31mGFD: {member_count} members: {', '.join(membership)}\033[0m")
-                    rm_socket.sendall(', '.join(membership).encode()) # updates RM about membership change
+                    # updates RM about membership change
+                    delete_text = f"<GFD,RM,delete replica,{removed_server}>"
+                    rm_socket.sendall(delete_text.encode())
     except Exception as e:
         print(e)
         pass
@@ -51,9 +75,11 @@ def lfd_handler(lfd_socket, addr, rm_socket):
 
 
 def run_GFD(gfd_ip,rm_ip, rm_port):
+    global lfd_sockets
+    lfd_sockets = {} # for communication between RM and servers
     print(f"GFD: {member_count} members") # initial print 
     host = gfd_ip
-    port = 6881
+    port = 6877
    
     print(f"Listening on {host}:{port}")
     
@@ -62,8 +88,11 @@ def run_GFD(gfd_ip,rm_ip, rm_port):
         rm_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         rm_socket.connect((rm_ip, rm_port))
         print(f"GFD connected to RM at {rm_ip}:{rm_port}")
+        # Need to receive RM messages for membership control(set i_am_ready, is_primary)
         message = f"RM: {member_count} members"
         rm_socket.sendall(message.encode())
+        rm_thread = threading.Thread(target=rm_handler, args=(rm_socket, "GFD"))
+        rm_thread.start()
         
         # init gfd socket and connect
         gfd_socket = socket.socket()
@@ -81,6 +110,7 @@ def run_GFD(gfd_ip,rm_ip, rm_port):
     finally:
         print('hi')
         gfd_socket.close()
+        rm_socket.close()
 
 if __name__ == "__main__":
     gfd_ip = sys.argv[1] 

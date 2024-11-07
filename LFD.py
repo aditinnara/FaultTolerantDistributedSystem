@@ -9,9 +9,10 @@ heartbeat_count = 0
 gfd_heartbeat_count = 0
 last_sent_time = time()
 last_received_time = time()
+s_socket = 0
 
-def send_heartbeat(heartbeat_freq, lfd_socket, lfd_name, s_name):
-    global last_sent_time, heartbeat_count
+def send_heartbeat(heartbeat_freq, lfd_name, s_name):
+    global last_sent_time, heartbeat_count, s_socket
 
     if time() - last_sent_time >= heartbeat_freq: 
         heartbeat = f"<{lfd_name},{s_name},{heartbeat_count},heartbeat>"
@@ -22,7 +23,7 @@ def send_heartbeat(heartbeat_freq, lfd_socket, lfd_name, s_name):
        
         try:
             last_sent_time = time()
-            lfd_socket.sendall(heartbeat.encode())
+            s_socket.sendall(heartbeat.encode())
 
             # inc heartbeat number
             heartbeat_count += 1
@@ -42,24 +43,36 @@ def send_gfd_heartbeat(gfd_socket, lfd_name, s_name):
         print("exception: ", e)
         pass
 
-def receive_gfd_messages(gfd_socket, lfd_name):
+def receive_gfd_messages(gfd_socket, lfd_name, s_name):
+    global s_socket
     to_read_buffer, _, _ = select.select([gfd_socket], [], [], heartbeat_freq / 10) 
     if to_read_buffer:
         try:
             gfd_message = gfd_socket.recv(1024).decode("utf-8")
             # non-blocking for receiving a heartbeat ACK from GFD
             if gfd_message:
-                heartbeat_count_str = gfd_message.strip('<').split(',')[2].strip()
-                print(f"\033[36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count_str}] {lfd_name} received heartbeat ACK from GFD\033[0m")
+                gfd_message_split = gfd_message.strip('<').strip('>').split(',')
+                print(gfd_message_split)
+                # new primary election from RM->GFD->LFD
+                if "new primary" in gfd_message_split:
+                    new_primary = gfd_message_split[-1].strip('>')
+                    print(f"GFD to {lfd_name}: {new_primary} is the New Primary")
+                    new_primary_text = f"<{lfd_name},{s_name},new primary,{new_primary}>"
+                    s_socket.sendall(new_primary_text.encode())
+                    print(f"{lfd_name} to {s_name}: {new_primary} is the New Primary")
+                else:
+                    heartbeat_count_str = gfd_message.strip('<').split(',')[2].strip()
+                    print(f"\033[36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count_str}] {lfd_name} received heartbeat ACK from GFD\033[0m")
         except Exception as e:
+            print(f"exception: {e}")
             pass
 
-def receive_heartbeat(lfd_socket, heartbeat_freq, gfd_socket, lfd_name, s_name):
-    global last_received_time
-    to_read_buffer, _, _ = select.select([lfd_socket], [], [], heartbeat_freq / 10)  
+def receive_heartbeat(lheartbeat_freq, gfd_socket, lfd_name, s_name):
+    global last_received_time, s_socket
+    to_read_buffer, _, _ = select.select([s_socket], [], [], heartbeat_freq / 10)  
     if to_read_buffer:
         try:
-            heartbeat_ack = lfd_socket.recv(1024).decode("utf-8")
+            heartbeat_ack = s_socket.recv(1024).decode("utf-8")
             # If it's a heartbeat message, update the last heartbeat received time
             if "heartbeat" in heartbeat_ack:
                 heartbeat_count_str = heartbeat_ack.strip('<').split(',')[2].strip()
@@ -75,8 +88,9 @@ def receive_heartbeat(lfd_socket, heartbeat_freq, gfd_socket, lfd_name, s_name):
         except Exception as e:
             pass
 
-def send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout, gfd_socket, lfd_name, s_name):
-    global last_sent_time, heartbeat_count, last_received_time, gfd_heartbeat_count
+
+def send_receive_check_heartbeat(sheartbeat_freq, heartbeat_timeout, gfd_socket, lfd_name, s_name):
+    global last_sent_time, heartbeat_count, last_received_time, gfd_heartbeat_count, s_socket
     heartbeat_count = 0
     gfd_heartbeat_count = 0
 
@@ -86,7 +100,7 @@ def send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout, 
 
     while True:
         
-        send_heartbeat(heartbeat_freq, lfd_socket, lfd_name, s_name)
+        send_heartbeat(heartbeat_freq, lfd_name, s_name)
         
         # if time() - last_gfd_sent_time >= heartbeat_freq:
         #     send_gfd_heartbeat(gfd_socket, lfd_name, s_name)
@@ -94,7 +108,7 @@ def send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout, 
         
         # receive_gfd_messages(gfd_socket, lfd_name)
 
-        receive_heartbeat(lfd_socket, heartbeat_freq, gfd_socket, lfd_name, s_name)
+        receive_heartbeat(heartbeat_freq, gfd_socket, lfd_name, s_name)
 
         # CHECK TIMEOUT
         if time() - last_received_time > heartbeat_timeout:
@@ -142,28 +156,35 @@ def send_receive_check_heartbeat(lfd_socket, heartbeat_freq, heartbeat_timeout, 
 
 
 def run_LFD(lfd_name, s_name, port, heartbeat_freq, gfd_ip, server_ip):
+    global s_socket # need to update when S1 recover
     heartbeat_timeout = 2 * heartbeat_freq
-
-    # Connect with GFD
-    gfd_socket = socket.socket()
-    gfd_port = 6881
-    # gfd_ip = '172.25.124.31'  # TODO: replace with real GFD IP address
-    gfd_socket.connect((gfd_ip, gfd_port))
-
-    # send GFD heartbeats in a thread
-    gfd_heartbeat_thread = threading.Thread(target=send_gfd_heartbeat_loop, args=(gfd_socket, lfd_name, heartbeat_freq))
-    gfd_heartbeat_thread.start()
-
+    connect_GFD = False
     while True:
-        # Connect with the server, and keep listening even if it dies 
+        # Connect with the server, and keep listening even if it dies
+        
         try:
             s_socket = socket.socket()
-            s_socket.settimeout(heartbeat_timeout)
+            # s_socket.settimeout(heartbeat_timeout)
             s_port = port  
             # s_ip = '172.25.112.1'
             s_socket.connect((server_ip, s_port))
 
-            send_receive_check_heartbeat(s_socket, heartbeat_freq, heartbeat_timeout, gfd_socket, lfd_name, s_name)
+            if not connect_GFD:
+                # Connect with GFD
+                gfd_socket = socket.socket()
+                gfd_port = 6877
+                # gfd_ip = '172.25.124.31'  # TODO: replace with real GFD IP address
+                gfd_socket.connect((gfd_ip, gfd_port))
+
+                # send GFD heartbeats in a thread
+                gfd_heartbeat_thread = threading.Thread(target=send_gfd_heartbeat_loop, args=(gfd_socket, lfd_name, heartbeat_freq, s_name))
+                gfd_heartbeat_thread.start()
+
+                connect_GFD = True
+                print("connect to GFD")
+                
+
+            send_receive_check_heartbeat(heartbeat_freq, heartbeat_timeout, gfd_socket, lfd_name, s_name)
 
         except Exception as e:  
             print("No new connections...: ", e)
@@ -174,13 +195,13 @@ def run_LFD(lfd_name, s_name, port, heartbeat_freq, gfd_ip, server_ip):
             gfd_socket.close()
             break 
 
-def send_gfd_heartbeat_loop(gfd_socket, lfd_name, heartbeat_freq):
-    global gfd_heartbeat_count
+def send_gfd_heartbeat_loop(gfd_socket, lfd_name, heartbeat_freq, s_name):
+    global gfd_heartbeat_count, s_socket
     while True:
         try:
             # Send GFD heartbeats
             send_gfd_heartbeat(gfd_socket, lfd_name, "GFD")
-            receive_gfd_messages(gfd_socket, lfd_name)
+            receive_gfd_messages(gfd_socket, lfd_name, s_name)
             sleep(heartbeat_freq)
         except Exception as e:
             print("Error in GFD heartbeat loop: ", e)
