@@ -22,23 +22,23 @@ def run_client(client_id, client_freq, server_id, server_ip, mutex, server_port)
                 c = socket.socket()
                 s1_ip = server_ip # TODO: replace with real IP address
                 c.connect((s1_ip, server_port))
+                print(f"Connected to server {server_id}!")
+                c.setblocking(0) # non blocking waiting for data from back up servers
                 connected = True 
             # request = <C1, S1, request_num, request> 
             request_str = f"<C{client_id},S{server_id},{c_request_num},Hello Server!>"
 
             # send request
 
-            c.send(request_str.encode())
+            c.sendall(request_str.encode())
             # keep track of request num
             c_request_num += 1
             # get timestamp
             sent_timestamp_str = strftime("%Y-%m-%d %H:%M:%S", localtime())
             print(f"\033[1;38;5;214m[{sent_timestamp_str}] Sent {request_str}\033[0m")
 
+            reply = c.recv(1024).decode()
 
-            reply = c.recv(1024).decode() 
-
-            
             recv_timestamp_str = strftime("%Y-%m-%d %H:%M:%S", localtime())
             # print receipts of all responses
             print(f"\033[38;5;214m[{recv_timestamp_str}] Received {reply}\033[0m")
@@ -54,6 +54,7 @@ def run_client(client_id, client_freq, server_id, server_ip, mutex, server_port)
 
             reply_server = reply_split[1].strip()
 
+
             # critical section in multithreading: mutate shared variables
             with mutex:
                 print("request_num: ", request_num, "last_request_num: ", last_request_num)
@@ -62,12 +63,14 @@ def run_client(client_id, client_freq, server_id, server_ip, mutex, server_port)
                 else:
                     # discard duplicate responses
                     print(f"\033[1;38;5;202m[Request Number {request_num}]: Discarded duplicate reply from {reply_server}\033[0m")
+            print(f"{server_id} bp3")
                 
 
             # wait 2 seconds before sending another message
             sleep(client_freq)
         except Exception as e:
-            # print(e)
+            print(e)
+            connected = False
             sleep(client_freq)
         except KeyboardInterrupt:
             c.close()
