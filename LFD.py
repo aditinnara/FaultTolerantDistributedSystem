@@ -159,6 +159,19 @@ def run_LFD(lfd_name, s_name, port, heartbeat_freq, gfd_ip, server_ip):
     global s_socket # need to update when S1 recover
     heartbeat_timeout = 2 * heartbeat_freq
     connect_GFD = False
+    if not connect_GFD:
+        # Connect with GFD
+        gfd_socket = socket.socket()
+        gfd_port = 6877
+        # gfd_ip = '172.25.124.31'  # TODO: replace with real GFD IP address
+        gfd_socket.connect((gfd_ip, gfd_port))
+
+        # send GFD heartbeats in a thread
+        gfd_heartbeat_thread = threading.Thread(target=send_gfd_heartbeat_loop, args=(gfd_socket, lfd_name, heartbeat_freq, s_name))
+        gfd_heartbeat_thread.start()
+
+        connect_GFD = True
+        print("connect to GFD")
     while True:
         # Connect with the server, and keep listening even if it dies
         
@@ -168,20 +181,6 @@ def run_LFD(lfd_name, s_name, port, heartbeat_freq, gfd_ip, server_ip):
             s_port = port  
             # s_ip = '172.25.112.1'
             s_socket.connect((server_ip, s_port))
-
-            if not connect_GFD:
-                # Connect with GFD
-                gfd_socket = socket.socket()
-                gfd_port = 6877
-                # gfd_ip = '172.25.124.31'  # TODO: replace with real GFD IP address
-                gfd_socket.connect((gfd_ip, gfd_port))
-
-                # send GFD heartbeats in a thread
-                gfd_heartbeat_thread = threading.Thread(target=send_gfd_heartbeat_loop, args=(gfd_socket, lfd_name, heartbeat_freq, s_name))
-                gfd_heartbeat_thread.start()
-
-                connect_GFD = True
-                print("connect to GFD")
                 
 
             send_receive_check_heartbeat(heartbeat_freq, heartbeat_timeout, gfd_socket, lfd_name, s_name)
@@ -192,8 +191,9 @@ def run_LFD(lfd_name, s_name, port, heartbeat_freq, gfd_ip, server_ip):
         except KeyboardInterrupt:
             print("KeyboardInterrupt: Exiting...")
             s_socket.close() # Close the socket
-            gfd_socket.close()
-            break 
+            
+            break
+    gfd_socket.close()
 
 def send_gfd_heartbeat_loop(gfd_socket, lfd_name, heartbeat_freq, s_name):
     global gfd_heartbeat_count, s_socket
