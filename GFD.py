@@ -12,13 +12,18 @@ def rm_handler(rm_socket, gfd_name):
     global membership, member_count
     try:
         while True:
+           
             request = rm_socket.recv(1024).decode("utf-8")
             request_split = request.strip('<').strip('>').split(',')
 
             if "new primary" in request_split: 
-                new_primary = request_split[3].strip('>')
+                print("split request: ", request_split)
+                print("request: ", request)
+                new_primary = request_split[3]
+                print("new prim: ", new_primary)
                 for server in lfd_sockets:
                     new_primary_text = f"<GFD,LFD,new primary,{new_primary}>@"
+                    print("new prim text: ", new_primary_text)
                     lfd_sockets[server].sendall(new_primary_text.encode())
                     print(f"GFD to {server}: New primary is {new_primary}")
     except Exception as e:

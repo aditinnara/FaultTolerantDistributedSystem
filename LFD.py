@@ -58,7 +58,9 @@ def receive_gfd_messages(gfd_socket, lfd_name, s_name):
                 # new primary election from RM->GFD->LFD
                 for msg in gfd_message_split:
                     if "new primary" in msg:
-                        new_primary = msg[-1].strip('>')
+                        print("msg: ", msg)
+                        new_primary = msg.strip('>').strip('<').split(",")[3]
+                        print("new prim: ", new_primary)
                         print(f"GFD to {lfd_name}: {new_primary} is the New Primary")
                         new_primary_text = f"<{lfd_name},{s_name},new primary,{new_primary}>"
                         s_socket.sendall(new_primary_text.encode())
