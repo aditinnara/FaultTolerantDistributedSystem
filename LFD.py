@@ -11,11 +11,13 @@ last_sent_time = time()
 last_received_time = time()
 s_socket = 0
 
+is_server_relaunched = 0
+
 def send_heartbeat(heartbeat_freq, lfd_name, s_name):
     global last_sent_time, heartbeat_count, s_socket
 
     if time() - last_sent_time >= heartbeat_freq: 
-        heartbeat = f"<{lfd_name},{s_name},{heartbeat_count},heartbeat>"
+        heartbeat = f"<{lfd_name},{s_name},{heartbeat_count},{is_server_relaunched},heartbeat>"
         
         # Use ANSI color for sending heartbeat
         heartbeat_text = f"\033[1;35m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count}] {lfd_name} sending heartbeat to {s_name}\033[0m"
@@ -57,14 +59,14 @@ def receive_gfd_messages(gfd_socket, lfd_name, s_name):
                 # print(gfd_message_split)
                 # new primary election from RM->GFD->LFD
                 for msg in gfd_message_split:
-                    if "new primary" in msg:
-                        print("msg: ", msg)
-                        new_primary = msg.strip('>').strip('<').split(",")[3]
-                        print("new prim: ", new_primary)
-                        print(f"GFD to {lfd_name}: {new_primary} is the New Primary")
-                        new_primary_text = f"<{lfd_name},{s_name},new primary,{new_primary}>"
-                        s_socket.sendall(new_primary_text.encode())
-                        print(f"{lfd_name} to {s_name}: {new_primary} is the New Primary")
+                    # if "new primary" in msg:
+                    #     print("msg: ", msg)
+                    #     new_primary = msg.strip('>').strip('<').split(",")[3]
+                    #     print("new prim: ", new_primary)
+                    #     print(f"GFD to {lfd_name}: {new_primary} is the New Primary")
+                    #     new_primary_text = f"<{lfd_name},{s_name},new primary,{new_primary}>"
+                    #     s_socket.sendall(new_primary_text.encode())
+                    #     print(f"{lfd_name} to {s_name}: {new_primary} is the New Primary")
                     if "heartbeat" in msg:
                         heartbeat_count_str = gfd_message.strip('<').split(',')[2].strip()
                         print(f"\033[36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count_str}] {lfd_name} received heartbeat ACK from GFD\033[0m")
@@ -73,7 +75,7 @@ def receive_gfd_messages(gfd_socket, lfd_name, s_name):
             pass
 
 def receive_heartbeat(lheartbeat_freq, gfd_socket, lfd_name, s_name):
-    global last_received_time, s_socket
+    global last_received_time, s_socket, is_server_relaunched
     to_read_buffer, _, _ = select.select([s_socket], [], [], heartbeat_freq / 10)  
     if to_read_buffer:
         try:
@@ -87,6 +89,7 @@ def receive_heartbeat(lheartbeat_freq, gfd_socket, lfd_name, s_name):
 
                 # After the first successful heartbeat, send "LFDx: add replica Sx" to GFD
                 if heartbeat_count == 1:
+                    is_server_relaunched = 1
                     add_text = f"<{lfd_name},GFD,add replica,{s_name}>"
                     gfd_socket.send(add_text.encode())
                     print(f"\033[36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] {lfd_name}: add replica {s_name}\033[0m")

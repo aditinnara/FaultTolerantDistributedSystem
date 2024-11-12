@@ -8,6 +8,8 @@ import threading
 membership = []
 member_count = 0
 
+server_launch_time = [0, 0, 0]
+
 def rm_handler(rm_socket, gfd_name):
     global membership, member_count
     try:

@@ -24,12 +24,12 @@ def checkpoint_backups(backup_socket, checkpt_freq, server_id):
 
     checkpoint_count = 0
 
-    global my_state 
+    global my_state
     try:
-        print("CHECKPOINTING BACKUPS")
+        #print("CHECKPOINTING BACKUPS")
         checkpoint_msg = f"<{server_id}-{checkpoint_count}-checkpoint-{my_state}>" # joined with - instead of ,
         backup_socket.sendall(checkpoint_msg.encode())
-        print(f"\033[1;32m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [CHECKPOINT NUM {checkpoint_count}] {server_id} sending checkpoint {my_state} to backup server\033[0m")
+        #print(f"\033[1;32m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [CHECKPOINT NUM {checkpoint_count}] {server_id} sending checkpoint {my_state} to backup server\033[0m")
         checkpoint_count += 1
         sleep(checkpt_freq)
     except Exception as e:
@@ -59,27 +59,36 @@ def receive_checkpoints(backup_socket, server_id):
                     my_state.update(received_state)  
 
                     # print checkpoint
-                    print(f"\033[1;36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [RECEIVED CHECKPOINT NUM {checkpoint_count}] {server_id} updated state to {my_state} from {received_server_id}\033[0m")
+                    global i_am_ready
+                    if i_am_ready == False:
+                        print(f"\033[1;36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [RECEIVED CHECKPOINT NUM {checkpoint_count}] {server_id} updated state to {my_state} from {received_server_id}\033[0m")
+                    i_am_ready = True
             except Exception as e:
                 print(f"Error when hearing from primary: {e}")
 
 
 
 def client_handler(client_socket, addr, server_id):
-    global is_primary, primary
+    global is_primary, primary, i_am_ready, high_watermark_request_num
     try:
         while True:
             request = client_socket.recv(1024).decode("utf-8")
-            print("request before split: ", request)
+            #print("request before split: ", request)
             request_split = request.strip('<').split(',')
             lfd_id = request_split[0].strip()
-            print(request)
+            #print(request)
 
             # receive heartbeat from LFD
             if "heartbeat" in request:  
                 # get heartbeat_count
                 heartbeat_count = request_split[2].strip()
-
+                is_server_relaunched = request_split[3].strip()
+                #print(request)
+                #print(request_split[3].strip())
+                #print(is_server_relaunched)
+                if(is_server_relaunched == '0'):
+                    i_am_ready = True
+                #print(is_server_relaunched == '0')
                 # print [timestamp] [heartbeat_count] Sx receives heartbeat from LFDx
                 print(f"\033[1;35m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count}] {server_id} receives heartbeat from {lfd_id}\033[0m")
                 
@@ -89,14 +98,14 @@ def client_handler(client_socket, addr, server_id):
                 # send heartbeat ACK
                 client_socket.sendall(request.encode())
             # new primary election from LFD
-            elif "new primary" in request:
-                new_primary = request_split[-1].strip('>')
-                print(new_primary)
-                primary = new_primary
-                print(f"{server_id} receives that {primary} is the New Primary")
-                if primary == server_id:
-                    is_primary = 1
-                    print(f"\033[1;32m[{server_id} is the new primary\033[0m")
+            # elif "new primary" in request:
+            #     new_primary = request_split[-1].strip('>')
+            #     print(new_primary)
+            #     primary = new_primary
+            #     print(f"{server_id} receives that {primary} is the New Primary")
+            #     if primary == server_id:
+            #         is_primary = 1
+            #         print(f"\033[1;32m[{server_id} is the new primary\033[0m")
             # Receiving request from client
             else:   
                 # print [timestamp] Received <client_id, server_id, request_num, request> 
@@ -104,8 +113,40 @@ def client_handler(client_socket, addr, server_id):
                 # TODO: newly recovered replica: receive and log incoming request numbers.
                 # high_watermark_request_num[]
                 
-                if is_primary == 1:
+                #if is_primary == 1:
+                if i_am_ready:
                     global my_state
+                    #Handle logged requests first
+                    for high_watermark_request in high_watermark_request_num:
+                        print("Handling logged requests: ------------------")
+                        high_water_request_split = high_watermark_request.strip('<').split(',')
+                        #high_water_lfd_id = request_split[0].strip()
+                        client_id = high_water_request_split[0]  
+                        request_num = int(high_water_request_split[2])
+
+                        # print [timestamp] my_state_[Sx] =  prev_state before processing <client_id, server_id, request_num, request>
+                        print(f"\033[34m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] my_state_{server_id} = {my_state} before processing {request}\033[0m")
+
+                        # update state (inc number of hellos from this client)
+                        my_state[client_id] += 1
+
+                        # print [timestamp] my_state_[Sx] =  new_state after processing <client_id, server_id, request_num, request>
+                        print(f"\033[1;34m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] my_state_{server_id} = {my_state} after processing {request}\033[0m")
+
+                        #reply_str = f"Hello, Client {client_id}"
+                        # reply = <client_id, server_id, request_num, reply> 
+                        #reply = f"<{client_id}, {server_id}, {request_num}, {reply_str}>"
+                        
+                        # print [timestamp] Sending <client_id, server_id, request_num, reply> 
+                        #print(f"\033[38;5;214m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] Sending {reply}\033[0m")
+                        
+                        # send the reply
+                        #client_socket.sendall(reply.encode())
+                        print("Log requests handled ------------------")
+                    high_watermark_request_num.clear()
+                    
+                    
+                    #Handle new request
                     client_id = request_split[0]  
                     request_num = int(request_split[2])
 
@@ -128,7 +169,8 @@ def client_handler(client_socket, addr, server_id):
                     # send the reply
                     client_socket.sendall(reply.encode())
                 else:
-                    print(f"\033[33m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] Backup server {server_id} received client request.\033[0m")
+                    high_watermark_request_num.append(request)
+                    print(f"\033[33m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}]  Server {server_id} received client request but not ready, logging request\033[0m")
 
     except Exception as e:
         print(f"Error when handling client: {e}")
@@ -138,9 +180,10 @@ def client_handler(client_socket, addr, server_id):
 
 
 def peer_handler(peer_sock, server_id, checkpt_freq):
-    global is_primary
+    global is_primary, i_am_ready
     while True:
-        if is_primary:
+        #if is_primary:
+        if i_am_ready:
             checkpoint_backups(peer_sock, checkpt_freq, server_id)
         else:
             receive_checkpoints(peer_sock, server_id)
@@ -193,7 +236,7 @@ def run_server(server_id, port, server_ip, peer_ips, checkpt_freq, peer_ports, b
     active_peer_connections = 0
     my_state = {"C1": 0, "C2": 0, "C3": 0}
     # ready to start accepting and processing client requests
-    i_am_ready = 0
+    i_am_ready = False
     # log incoming request numbers
     high_watermark_request_num = []
     
