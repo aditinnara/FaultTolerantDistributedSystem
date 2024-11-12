@@ -70,7 +70,7 @@ def client_handler(client_socket, addr, server_id):
     try:
         while True:
             request = client_socket.recv(1024).decode("utf-8")
-            print("request before split: ", request)
+            # print("request before split: ", request)
             request_split = request.strip('<').split(',')
             lfd_id = request_split[0].strip()
             print(request)
