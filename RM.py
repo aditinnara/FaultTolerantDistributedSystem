@@ -8,7 +8,6 @@ member_count = 0
 # keep track of primary replica
 primary = None
 
-server_launch_time = [0, 0, 0]
 
 def gfd_handler(gfd_socket, addr):
     global membership, member_count, primary, server_launch_time
@@ -29,7 +28,7 @@ def gfd_handler(gfd_socket, addr):
                     primary = added_server
                     #print(f"RM: new primary is {primary}")
                     # notify GFD of the new primary
-                    new_primary_text = f"<RM,GFD,new primary,{added_server},{server_launch_time[0]},{server_launch_time[1]},{server_launch_time[2]}>"
+                    new_primary_text = f"<RM,GFD,new primary,{added_server}>"
                     gfd_socket.sendall(new_primary_text.encode())
                     #print(f"RM: send new primary {primary} to GFD")
                 print(f"\033[1;32mAdding server {added_server}...\033[0m")
@@ -42,11 +41,11 @@ def gfd_handler(gfd_socket, addr):
                     # if primary fails, reelect primary
                     if member_count > 0 and removed_server == primary:
                         primary = membership[0]
-                        print(f"RM: new primary is {primary}")
+                        #print(f"RM: new primary is {primary}")
                         # notify GFD of the new primary
                         new_primary_text = f"<RM,GFD,new primary,{primary}>"
                         gfd_socket.sendall(new_primary_text.encode())
-                        print(f"RM: send new primary {primary} to GFD")
+                        #print(f"RM: send new primary {primary} to GFD")
                     print(f"\033[1;31mRemoving server {removed_server}...\033[0m")
                     print(f"\033[1;35mRM: {member_count} members: {', '.join(membership)}\033[0m")
             

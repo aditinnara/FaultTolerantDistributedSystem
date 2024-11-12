@@ -6,7 +6,7 @@ import threading
 
 # as a primary, checkpoint the backups given a checkpointing frequency
 def checkpoint_backups(backup_socket, checkpt_freq, server_id):
-    
+    sleep(checkpt_freq)
     # connected = False
     # # connect to the backup server
     # while not connected:
@@ -128,7 +128,7 @@ def client_handler(client_socket, addr, server_id):
                         print(f"\033[34m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] my_state_{server_id} = {my_state} before processing {request}\033[0m")
 
                         # update state (inc number of hellos from this client)
-                        my_state[client_id] += 1
+                        #my_state[client_id] += 1
 
                         # print [timestamp] my_state_[Sx] =  new_state after processing <client_id, server_id, request_num, request>
                         print(f"\033[1;34m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] my_state_{server_id} = {my_state} after processing {request}\033[0m")
@@ -211,7 +211,7 @@ def peer_listen_connections(host, backup_port, checkpt_freq):
             peer_thread = threading.Thread(target=peer_handler, args=(peer_sock, host, checkpt_freq))
             peer_thread.start()
         except Exception as e:
-            print(f"Error accepting connection from peer server: {e}")
+            #print(f"Error accepting connection from peer server: {e}")
             sleep(checkpt_freq)
 
 
