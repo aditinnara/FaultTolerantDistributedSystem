@@ -5,7 +5,7 @@ import select
 import threading
 
 # as a primary, checkpoint the backups given a checkpointing frequency
-def checkpoint_backups(backup_socket, checkpt_freq, server_id):
+def checkpoint_backups(backup_ip, backup_socket, checkpt_freq, server_id):
     
     connected = False
     # # connect to the backup server
@@ -137,11 +137,11 @@ def client_handler(client_socket, addr, server_id):
         print(f"Connection to client ({addr[0]}:{addr[1]}) closed")
 
 
-def peer_handler(peer_sock, server_id, checkpt_freq):
+def peer_handler(peer_ip, peer_sock, server_id, checkpt_freq):
     global is_primary
     while True:
         if is_primary:
-            checkpoint_backups(peer_sock, checkpt_freq, server_id)
+            checkpoint_backups(peer_ip, peer_sock, checkpt_freq, server_id)
         else:
             receive_checkpoints(peer_sock, server_id)
         sleep(checkpt_freq)
@@ -178,7 +178,7 @@ def peer_connect(peer_ip, peer_port, heartbeat_timeout, host):
             print(f"Try to connect peer {peer_ip}:{peer_port}")
             peer_client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             peer_client_socket.connect((peer_ip, peer_port))
-            peer_thread = threading.Thread(target=peer_handler, args=(peer_client_socket, host, checkpt_freq))
+            peer_thread = threading.Thread(target=peer_handler, args=(peer_ip, peer_client_socket, host, checkpt_freq))
             peer_thread.start()
             return 
         except Exception as e:
