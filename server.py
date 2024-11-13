@@ -7,18 +7,18 @@ import threading
 # as a primary, checkpoint the backups given a checkpointing frequency
 def checkpoint_backups(backup_socket, checkpt_freq, server_id):
     
-    # connected = False
+    connected = False
     # # connect to the backup server
-    # while not connected:
-    #     try:
-    #         backup_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #         backup_socket.connect((backup_ip, backup_port))
-    #         print(f"{server_id} connected to backup server at {backup_ip}:{backup_port}")
-    #         connected = True
-    #     except Exception as e:
-    #         print(f"Error connecting to backup server: {e}")
-    #         backup_socket.close()
-    #         sleep(3)
+    while not connected:
+        try:
+            backup_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            backup_socket.connect((backup_ip, backup_port))
+            print(f"{server_id} connected to backup server at {backup_ip}:{backup_port}")
+            connected = True
+        except Exception as e:
+            print(f"Error connecting to backup server: {e}")
+            backup_socket.close()
+            sleep(3)
     
     # send checkpoint to the backup server
 
