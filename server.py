@@ -34,6 +34,7 @@ def checkpoint_backups(backup_socket, checkpt_freq, server_id):
         sleep(checkpt_freq)
     except Exception as e:
         print(f"Error when checkpointing: {e}")
+        return -1
         backup_socket.close()
         sleep(checkpt_freq)
 
@@ -142,7 +143,9 @@ def peer_handler(peer_sock, server_id, checkpt_freq):
     global is_primary
     while True:
         if is_primary:
-            checkpoint_backups(peer_sock, checkpt_freq, server_id)
+            res = checkpoint_backups(peer_sock, checkpt_freq, server_id)
+            if res == -1:
+                break
         else:
             receive_checkpoints(peer_sock, server_id)
         sleep(checkpt_freq)
