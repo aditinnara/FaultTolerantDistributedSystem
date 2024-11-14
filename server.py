@@ -153,7 +153,7 @@ def peer_listen_connections(host, backup_port, checkpt_freq):
         try:
             peer_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             peer_server_socket.bind((host, backup_port))
-            peer_server_socket.listen(2) # can listen for 2 connections
+            peer_server_socket.listen(10) # can listen for 2 connections
             print(f"Listening for peers on {host}:{backup_port}")
             break
         except Exception as e:
