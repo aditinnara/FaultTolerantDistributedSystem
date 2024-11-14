@@ -184,6 +184,7 @@ def peer_connect(peer_ip, peer_port, heartbeat_timeout, host):
             return 
         except Exception as e:
             print(f"Error connecting to peer server: {e}")
+            peer_client_socket.close()
             sleep(heartbeat_timeout)
 
 
