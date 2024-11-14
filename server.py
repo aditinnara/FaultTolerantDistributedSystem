@@ -173,7 +173,7 @@ def peer_listen_connections(host, backup_port, checkpt_freq):
             peer_thread = threading.Thread(target=peer_handler, args=(peer_sock, host, checkpt_freq))
             peer_thread.start()
         except Exception as e:
-            # print(f"Error accepting connection from peer server: {e}")
+            print(f"Error accepting connection from peer server: {e}")
             sleep(checkpt_freq)
 
 
