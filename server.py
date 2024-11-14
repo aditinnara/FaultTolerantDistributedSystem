@@ -157,6 +157,7 @@ def peer_listen_connections(host, backup_port, checkpt_freq):
             print(f"Listening for peers on {host}:{backup_port}")
             break
         except Exception as e:
+            peer_server_socket.close()
             print(f"Error open listen socket for peers: {e}")
 
 
