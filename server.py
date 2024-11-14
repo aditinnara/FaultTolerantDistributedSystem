@@ -34,8 +34,8 @@ def checkpoint_backups(backup_socket, checkpt_freq, server_id):
         sleep(checkpt_freq)
     except Exception as e:
         print(f"Error when checkpointing: {e}")
-        return -1
         backup_socket.close()
+        return -1
         sleep(checkpt_freq)
 
 
