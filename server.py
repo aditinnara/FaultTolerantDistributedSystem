@@ -283,12 +283,12 @@ if __name__ == "__main__":
     # Command: python3 server.py <server_index (1,2,3)> <checkpoint_freq> <server_ip1> <server_ip2> <server_ip3> 
     global is_primary
     server_index = int(sys.argv[1])
-    checkpt_freq = int(sys.argv[2])  
-    peer_ips = [sys.argv[4], sys.argv[5]]
+    checkpt_freq = int(sys.argv[2])
     
     if server_index == 1:
         server_id = "S1"
         server_ip = sys.argv[3]
+        peer_ips = [sys.argv[4], sys.argv[5]]
         is_primary = 0
         peer_ports = [7011, 7012]
         backup_port = 7010
@@ -296,6 +296,7 @@ if __name__ == "__main__":
     elif server_index == 2:
         server_id = "S2"
         server_ip = sys.argv[4]
+        peer_ips = [sys.argv[3], sys.argv[5]]
         is_primary = 0
         peer_ports = [7010, 7012]
         backup_port = 7011
@@ -303,6 +304,7 @@ if __name__ == "__main__":
     elif server_index == 3:
         server_id = "S3"
         server_ip = sys.argv[5]
+        peer_ips = [sys.argv[3], sys.argv[4]]
         is_primary = 0
         peer_ports = [7010, 7011]
         backup_port = 7012
