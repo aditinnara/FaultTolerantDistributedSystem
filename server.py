@@ -56,12 +56,12 @@ def receive_checkpoints(backup_socket, server_id):
 
                     # update state and checkpt counter
                     checkpoint_count = received_checkpoint_count
-                    global my_state 
+                    global my_state, i_am_ready
                     if i_am_ready == False:
                         my_state.update(received_state)  
 
                     # print checkpoint
-                    global i_am_ready
+
                     if i_am_ready == False:
                         print(f"\033[1;36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [RECEIVED CHECKPOINT] {server_id} updated state to {my_state} from {received_server_id}\033[0m")
                     i_am_ready = True
