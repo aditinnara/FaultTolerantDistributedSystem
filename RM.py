@@ -8,23 +8,29 @@ membership = []
 member_count = 0
 # keep track of primary replica
 primary = None
+
 # Dictionary which maps server names to their corresponding shell scripts
+# TODO: need to set up this remote host ip so we can ssh into the remote machine!
+# TODO: what this means is that each server replica machine has to setup their own ssh server
 server_scripts = {
-    "S1": "S1.sh",
-    "S2": "S2.sh",
-    "S3": "S3.sh"
+    "S1": ["S1.sh", "user@remote_host_ip"],
+    "S2": ["S2.sh", "user@remote_host_ip"],
+    "S3": ["S3.sh", "user@remote_host_ip"]
 }
 
 
 # NEW CODE -- try to recover server based on which server was removed
 def recover_server(removed_server):
-    # is the removed server valid??
     if removed_server not in server_scripts:
         raise ValueError(f"Invalid server name: {removed_server}")
-    # actually recover the server
-    shell_script = server_scripts[removed_server]
-    print(f"Recovering {removed_server}...")
-    return subprocess.Popen(["/bin/bash", shell_script])
+    shell_script, remote_host = server_scripts[removed_server]
+    ssh_command = [
+        "ssh", remote_host, f"bash {shell_script}"
+    ]
+    # now the server machines should log everything
+    print(f"Recovering {removed_server} on {remote_host}...")
+    subprocess.Popen(ssh_command)
+
 
 
 def gfd_handler(gfd_socket, addr):
