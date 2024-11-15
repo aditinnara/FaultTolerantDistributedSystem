@@ -98,7 +98,7 @@ def client_handler(client_socket, addr, server_id):
                 print(f"{server_id} receives that {primary} is the New Primary")
                 if primary == server_id:
                     is_primary = 1
-                    print(f"\033[1;32m[{server_id} is the new primary\033[0m")
+                    print(f"\033[1;32m{server_id} is the New Primary\033[0m")
             # Receiving request from client
             else:   
                 # print [timestamp] Received <client_id, server_id, request_num, request> 
