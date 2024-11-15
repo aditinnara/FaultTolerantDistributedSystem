@@ -2,11 +2,29 @@
 import socket
 import sys
 import threading
+import subprocess
 
 membership = []
 member_count = 0
 # keep track of primary replica
 primary = None
+# Dictionary which maps server names to their corresponding shell scripts
+server_scripts = {
+    "S1": "S1.sh",
+    "S2": "S2.sh",
+    "S3": "S3.sh"
+}
+
+
+# NEW CODE -- try to recover server based on which server was removed
+def recover_server(removed_server):
+    # is the removed server valid??
+    if removed_server not in server_scripts:
+        raise ValueError(f"Invalid server name: {removed_server}")
+    # actually recover the server
+    shell_script = server_scripts[removed_server]
+    print(f"Recovering {removed_server}...")
+    return subprocess.Popen(["/bin/bash", shell_script])
 
 
 def gfd_handler(gfd_socket, addr):
@@ -48,7 +66,16 @@ def gfd_handler(gfd_socket, addr):
                         #print(f"RM: send new primary {primary} to GFD")
                     print(f"\033[1;31mRemoving server {removed_server}...\033[0m")
                     print(f"\033[1;35mRM: {member_count} members: {', '.join(membership)}\033[0m")
-            
+                        # TRYING TO RECOVER THE SERVER -- NEW CODE
+            if recover_server(removed_server):
+                # tell GFD we are RECOVERING
+                recovered_server_text = f"<RM,GFD,recovered replica,{removed_server}>"
+                gfd_socket.sendall(recovered_server_text.encode())
+                # Add the recovered server back to membership
+                member_count += 1
+                membership.append(removed_server)
+                print(f"\033[1;32mRM: {removed_server} has rejoined.\033[0m")
+                print(f"\033[1;35mRM: {member_count} members: {', '.join(membership)}\033[0m")
 
             # if ("S1" in request_split) or ("S2" in request_split) or ("S3" in request_split):
             #     member_count = len(request_split)
