@@ -290,24 +290,24 @@ if __name__ == "__main__":
         server_ip = sys.argv[3]
         peer_ips = [sys.argv[4], sys.argv[5]]
         is_primary = 0
-        peer_ports = [7011, 7012]
-        backup_port = 7010
+        peer_ports = [17011, 17012]
+        backup_port = 17010
         port = 6000
     elif server_index == 2:
         server_id = "S2"
         server_ip = sys.argv[4]
         peer_ips = [sys.argv[3], sys.argv[5]]
         is_primary = 0
-        peer_ports = [7010, 7012]
-        backup_port = 7011
+        peer_ports = [17010, 17012]
+        backup_port = 17011
         port = 6001
     elif server_index == 3:
         server_id = "S3"
         server_ip = sys.argv[5]
         peer_ips = [sys.argv[3], sys.argv[4]]
         is_primary = 0
-        peer_ports = [7010, 7011]
-        backup_port = 7012
+        peer_ports = [17010, 17011]
+        backup_port = 17012
         port = 6002
     else:
         print("Wrong input command")
