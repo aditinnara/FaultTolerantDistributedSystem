@@ -22,9 +22,9 @@ def checkpoint_backups(backup_socket, checkpt_freq, server_id):
     
     # send checkpoint to the backup server
 
-    checkpoint_count = 0
+    
 
-    global my_state 
+    global my_state, checkpoint_count 
     try:
         print("CHECKPOINTING BACKUPS")
         checkpoint_msg = f"<{server_id}-{checkpoint_count}-checkpoint-{my_state}>" # joined with - instead of ,
@@ -41,7 +41,7 @@ def checkpoint_backups(backup_socket, checkpt_freq, server_id):
 
 # as a backup, receive checkpoint from primary
 def receive_checkpoints(backup_socket, server_id):
-        checkpoint_count = 0
+        global checkpoint_count 
         to_read_buffer, _, _ = select.select([backup_socket], [], [], 1 / 10) # 1/10 is arbitrary frequency for nonblocking op
         if to_read_buffer:
             try:
@@ -140,7 +140,7 @@ def client_handler(client_socket, addr, server_id):
 
 
 def peer_handler(peer_sock, server_id, checkpt_freq):
-    global is_primary
+    global is_primary, checkpoint_count
     while True:
         if is_primary:
             res = checkpoint_backups(peer_sock, checkpt_freq, server_id)
@@ -194,9 +194,10 @@ def peer_connect(peer_ip, peer_port, heartbeat_timeout, host):
 
 
 def run_server(server_id, port, server_ip, peer_ips, checkpt_freq, peer_ports, backup_port):
-    global my_state, i_am_ready, high_watermark_request_num, is_primary, primary
+    global my_state, i_am_ready, high_watermark_request_num, is_primary, primary, checkpoint_count
     primary = None
     active_peer_connections = 0
+    checkpoint_count = 0
     my_state = {"C1": 0, "C2": 0, "C3": 0}
     # ready to start accepting and processing client requests
     i_am_ready = 0
