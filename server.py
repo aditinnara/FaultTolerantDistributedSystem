@@ -57,7 +57,8 @@ def receive_checkpoints(backup_socket, server_id):
                     # update state and checkpt counter
                     checkpoint_count = received_checkpoint_count
                     global my_state 
-                    my_state.update(received_state)  
+                    if i_am_ready == False:
+                        my_state.update(received_state)  
 
                     # print checkpoint
                     global i_am_ready
