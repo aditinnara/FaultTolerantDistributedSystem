@@ -34,6 +34,7 @@ def checkpoint_backups(backup_socket, checkpt_freq, server_id):
         sleep(checkpt_freq)
     except Exception as e:
         print(f"Error when checkpointing: {e}")
+        return -1
         sleep(checkpt_freq)
 
 
@@ -61,7 +62,7 @@ def receive_checkpoints(backup_socket, server_id):
                     # print checkpoint
                     global i_am_ready
                     if i_am_ready == False:
-                        print(f"\033[1;36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [RECEIVED CHECKPOINT NUM {checkpoint_count}] {server_id} updated state to {my_state} from {received_server_id}\033[0m")
+                        print(f"\033[1;36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [RECEIVED CHECKPOINT] {server_id} updated state to {my_state} from {received_server_id}\033[0m")
                     i_am_ready = True
             except Exception as e:
                 print(f"Error when hearing from primary: {e}")
@@ -184,7 +185,9 @@ def peer_handler(peer_sock, server_id, checkpt_freq):
     while True:
         #if is_primary:
         if i_am_ready:
-            checkpoint_backups(peer_sock, checkpt_freq, server_id)
+            res = checkpoint_backups(peer_sock, checkpt_freq, server_id)
+            if res == -1: 
+                break
         else:
             receive_checkpoints(peer_sock, server_id)
         sleep(checkpt_freq)
