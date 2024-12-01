@@ -2,12 +2,29 @@
 import socket
 import sys
 import threading
+import subprocess
 
 membership = []
 member_count = 0
 # keep track of primary replica
 primary = None
-
+# Dictionary which maps server names to their corresponding shell scripts
+server_scripts = {
+    "S1": ["S1.sh", "user@remote_host_ip"],
+    "S2": ["S2.sh", "user@remote_host_ip"],
+    "S3": ["S3.sh", "user@remote_host_ip"]
+}
+# NEW CODE -- try to recover server based on which server was removed
+def recover_server(removed_server):
+    if removed_server not in server_scripts:
+        raise ValueError(f"Invalid server name: {removed_server}")
+    shell_script, remote_host = server_scripts[removed_server]
+    ssh_command = [
+        "ssh", remote_host, f"bash {shell_script}"
+    ]
+    # now the server machines should log everything
+    print(f"Recovering {removed_server} on {remote_host}...")
+    subprocess.Popen(ssh_command)
 
 def gfd_handler(gfd_socket, addr):
     global membership, member_count, primary, server_launch_time
@@ -47,6 +64,15 @@ def gfd_handler(gfd_socket, addr):
                         gfd_socket.sendall(new_primary_text.encode())
                         #print(f"RM: send new primary {primary} to GFD")
                     print(f"\033[1;31mRemoving server {removed_server}...\033[0m")
+                    print(f"\033[1;35mRM: {member_count} members: {', '.join(membership)}\033[0m")
+                if recover_server(removed_server):
+                    # tell GFD we are RECOVERING
+                    recovered_server_text = f"<RM,GFD,recovered replica,{removed_server}>"
+                    gfd_socket.sendall(recovered_server_text.encode())
+                    # Add the recovered server back to membership
+                    member_count += 1
+                    membership.append(removed_server)
+                    print(f"\033[1;32mRM: {removed_server} has rejoined.\033[0m")
                     print(f"\033[1;35mRM: {member_count} members: {', '.join(membership)}\033[0m")
             
 
