@@ -10,10 +10,15 @@ member_count = 0
 primary = None
 # Dictionary which maps server names to their corresponding shell scripts
 server_scripts = {
-    "S1": ["S1.sh", "user@remote_host_ip"],
-    "S2": ["S2.sh", "user@remote_host_ip"],
-    "S3": ["S3.sh", "user@remote_host_ip"]
+    "S1": ["S1.sh", "ubuntu@ec2-34-222-115-228.us-west-2.compute.amazonaws.com"],
+    "S2": ["S2.sh", "ubuntu@ec2-35-89-143-40.us-west-2.compute.amazonaws.com"],
+    "S3": ["S3.sh", "ubuntu@ec2-34-217-83-10.us-west-2.compute.amazonaws.com"]
 }
+# ssh private key related process
+# 1. upload .pem private key
+# 2. run eval "$(ssh-agent)"
+# 3. run ssh-add xxx.pem
+
 # NEW CODE -- try to recover server based on which server was removed
 def recover_server(removed_server):
     if removed_server not in server_scripts:
@@ -101,6 +106,9 @@ def run_RM(rm_ip):
     try:
         # init rm socket and connect
         rm_socket = socket.socket()
+        # enable reuse
+        rm_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        rm_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         rm_socket.bind((host, port))
         rm_socket.listen(1) # rm listens to GFD
 
