@@ -25,7 +25,7 @@ def recover_server(removed_server):
         raise ValueError(f"Invalid server name: {removed_server}")
     shell_script, remote_host = server_scripts[removed_server]
     ssh_command = [
-        "ssh", remote_host, f"bash {shell_script}"
+        "ssh", remote_host, f"cd FaultTolerantDistributedSystem;",f"bash {shell_script}"
     ]
     # now the server machines should log everything
     print(f"Recovering {removed_server} on {remote_host}...")
