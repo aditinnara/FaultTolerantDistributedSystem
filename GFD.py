@@ -8,6 +8,7 @@ import threading
 membership = []
 member_count = 0
 
+adding_new_replica = '0'
 
 def rm_handler(rm_socket, gfd_name):
     global membership, member_count
@@ -33,7 +34,7 @@ def rm_handler(rm_socket, gfd_name):
 
 
 def lfd_handler(lfd_socket, addr, rm_socket):
-    global membership, member_count, lfd_sockets
+    global membership, member_count, lfd_sockets, adding_new_replica
     try:
         while True:
             request = lfd_socket.recv(1024).decode("utf-8")
@@ -43,13 +44,18 @@ def lfd_handler(lfd_socket, addr, rm_socket):
                 # Get the LFD that's sending the message
                 sending_lfd = request_split[0].strip() 
                 heartbeat_count = request_split[2].strip()
+                
+                heartbeat_message = f"<{sending_lfd},GFD,{heartbeat_count},heartbeat,{adding_new_replica}, >"
 
                 # S1 receives heartbeat from LFD1, for ex
                 print(f"\033[1;36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count}] GFD receives heartbeat from {sending_lfd}\033[0m")
                 # send the ACK
                 print(f"\033[36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count}] GFD sending heartbeat ACK to {sending_lfd}\033[0")
-                lfd_socket.sendall(request.encode())
+                #lfd_socket.sendall(request.encode())
+                lfd_socket.sendall(heartbeat_message.encode())
+                adding_new_replica = '0'
             elif "add replica" in request_split: 
+                adding_new_replica = '1'
                 sending_lfd = request_split[0].strip() # LFD1
                 added_server = request_split[3].strip('>') # S1
                 member_count += 1

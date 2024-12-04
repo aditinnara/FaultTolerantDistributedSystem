@@ -11,13 +11,14 @@ last_sent_time = time()
 last_received_time = time()
 s_socket = 0
 
-is_server_relaunched = 0
+is_server_relaunched = '0'
+adding_new_replica = '0'
 
 def send_heartbeat(heartbeat_freq, lfd_name, s_name):
     global last_sent_time, heartbeat_count, s_socket
 
     if time() - last_sent_time >= heartbeat_freq: 
-        heartbeat = f"<{lfd_name},{s_name},{heartbeat_count},{is_server_relaunched},heartbeat>"
+        heartbeat = f"<{lfd_name},{s_name},{heartbeat_count},{is_server_relaunched},{adding_new_replica},heartbeat>"
         
         # Use ANSI color for sending heartbeat
         heartbeat_text = f"\033[1;35m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count}] {lfd_name} sending heartbeat to {s_name}\033[0m"
@@ -35,8 +36,8 @@ def send_heartbeat(heartbeat_freq, lfd_name, s_name):
 
 # Heartbeat function for GFD
 def send_gfd_heartbeat(gfd_socket, lfd_name, s_name):
-    global gfd_heartbeat_count
-    heartbeat_message = f"<{lfd_name},GFD,{gfd_heartbeat_count},heartbeat>"
+    global gfd_heartbeat_count, adding_new_replica
+    heartbeat_message = f"<{lfd_name},GFD,{gfd_heartbeat_count},heartbeat,{adding_new_replica}, >"
     try:
         gfd_socket.send(heartbeat_message.encode())
         print(f"\033[1;36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{gfd_heartbeat_count}] {lfd_name} sending heartbeat to GFD\033[0m")
@@ -46,7 +47,7 @@ def send_gfd_heartbeat(gfd_socket, lfd_name, s_name):
         pass
 
 def receive_gfd_messages(gfd_socket, lfd_name, s_name):
-    global s_socket
+    global s_socket, adding_new_replica
     to_read_buffer, _, _ = select.select([gfd_socket], [], [], heartbeat_freq / 10) 
     if to_read_buffer:
         try:
@@ -69,6 +70,7 @@ def receive_gfd_messages(gfd_socket, lfd_name, s_name):
                     #     print(f"{lfd_name} to {s_name}: {new_primary} is the New Primary")
                     if "heartbeat" in msg:
                         heartbeat_count_str = gfd_message.strip('<').split(',')[2].strip()
+                        adding_new_replica = gfd_message.strip('<').split(',')[4].strip()
                         print(f"\033[36m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [{heartbeat_count_str}] {lfd_name} received heartbeat ACK from GFD\033[0m")
         except Exception as e:
             print(f"exception: {e}")
