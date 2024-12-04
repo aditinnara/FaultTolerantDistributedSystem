@@ -42,7 +42,8 @@ def checkpoint_backups(backup_socket, checkpt_freq, server_id):
         sleep(checkpt_freq)
     except Exception as e:
         sent_checkpoint_count = 0
-        print(f"Error when checkpointing: {e}")
+        print(f"\033[1;32m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [CHECKPOINT NUM {checkpoint_count}] {server_id} sending checkpoint {my_state} to backup server\033[0m")
+        #print(f"Error when checkpointing: {e}")
         return -1
         sleep(checkpt_freq)
 
