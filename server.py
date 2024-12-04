@@ -33,7 +33,8 @@ def checkpoint_backups(backup_socket, checkpt_freq, server_id):
         #print("CHECKPOINTING BACKUPS")
         checkpoint_msg = f"<{server_id}-{checkpoint_count}-checkpoint-{my_state}>" # joined with - instead of ,
         backup_socket.sendall(checkpoint_msg.encode())
-        print(f"\033[1;32m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [CHECKPOINT NUM {checkpoint_count}] {server_id} sending checkpoint {my_state} to backup server\033[0m")
+        if sent_checkpoint_count <= 1:
+            print(f"\033[1;32m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [CHECKPOINT NUM {checkpoint_count}] {server_id} sending checkpoint {my_state} to backup server\033[0m")
         checkpoint_count += 1
         sleep(checkpt_freq)
     except Exception as e:
@@ -196,7 +197,7 @@ def peer_handler(peer_sock, server_id, checkpt_freq):
         if i_am_ready and adding_new_replica:
             res = checkpoint_backups(peer_sock, checkpt_freq, server_id)
             sent_checkpoint_count += 1
-            if sent_checkpoint_count == 5:
+            if sent_checkpoint_count >= 5:
                 adding_new_replica = False
             if res == -1: 
                 break
