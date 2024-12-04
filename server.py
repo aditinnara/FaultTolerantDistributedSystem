@@ -41,6 +41,7 @@ def checkpoint_backups(backup_socket, checkpt_freq, server_id):
         checkpoint_count += 1
         sleep(checkpt_freq)
     except Exception as e:
+        sent_checkpoint_count = 0
         print(f"Error when checkpointing: {e}")
         return -1
         sleep(checkpt_freq)
