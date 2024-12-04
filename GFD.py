@@ -101,6 +101,9 @@ def run_GFD(gfd_ip,rm_ip, rm_port):
         
         # init gfd socket and connect
         gfd_socket = socket.socket()
+        # enable reuse
+        gfd_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        gfd_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         gfd_socket.bind((host, port))
         gfd_socket.listen(3) # gfd listens to LFD1, LFD2, LFD3 
 
