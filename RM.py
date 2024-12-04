@@ -35,7 +35,7 @@ def recover_server(removed_server):
     
     # SSH command to start the server process in a tmux session
     ssh_command = [
-        "ssh", "-t", remote_host, 
+        "ssh", "-t", remote_host, f"tmux kill-session -t {session_name};",
         f"tmux new-session -d -s {session_name} 'cd FaultTolerantDistributedSystem && bash {shell_script}; bash'"
     ]
     

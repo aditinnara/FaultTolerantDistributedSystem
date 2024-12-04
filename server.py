@@ -156,6 +156,9 @@ def peer_listen_connections(host, backup_port, checkpt_freq):
     while True:
         try:
             peer_server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # enable reuse
+            peer_server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            peer_server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             peer_server_socket.bind((host, backup_port))
             peer_server_socket.listen(10) # can listen for 2 connections
             print(f"Listening for peers on {host}:{backup_port}")
@@ -251,6 +254,9 @@ def run_server(server_id, port, server_ip, peer_ips, checkpt_freq, peer_ports, b
     try:
         # initialize server
         server_socket = socket.socket()
+        # enable reuse
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         server_socket.bind((host, port))
         server_socket.listen(4)  # can listen for 4 connections: 3 clients, 1 LFD
         print(f"{server_id} Listening on {host}:{port}")
