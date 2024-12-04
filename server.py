@@ -193,10 +193,10 @@ def peer_handler(peer_sock, server_id, checkpt_freq):
         #if is_primary:
         if i_am_ready and adding_new_replica:
             res = checkpoint_backups(peer_sock, checkpt_freq, server_id)
-            adding_new_replica = False
+            #adding_new_replica = False
             if res == -1: 
                 break
-        else:
+        elif not i_am_ready:
             receive_checkpoints(peer_sock, server_id)
         sleep(checkpt_freq)
 
