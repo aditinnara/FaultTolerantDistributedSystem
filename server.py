@@ -96,7 +96,7 @@ def client_handler(client_socket, addr, server_id):
                 heartbeat_count = request_split[2].strip()
                 is_server_relaunched = request_split[3].strip()
                 lfd_adding_new_replica = request_split[4].strip()
-                print("lfd_adding_new_replica: " + lfd_adding_new_replica)
+                #print("lfd_adding_new_replica: " + lfd_adding_new_replica)
                 if lfd_adding_new_replica == '1':
                     sent_checkpoint_count = 0
                     checkpoint_messages_pointed = 0
