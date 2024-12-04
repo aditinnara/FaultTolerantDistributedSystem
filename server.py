@@ -188,7 +188,7 @@ def client_handler(client_socket, addr, server_id):
 
 
 def peer_handler(peer_sock, server_id, checkpt_freq):
-    global is_primary, i_am_ready
+    global is_primary, i_am_ready, adding_new_replica
     while True:
         #if is_primary:
         if i_am_ready and adding_new_replica:
