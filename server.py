@@ -35,7 +35,7 @@ def checkpoint_backups(backup_socket, checkpt_freq, server_id):
         checkpoint_msg = f"<{server_id}-{checkpoint_count}-checkpoint-{my_state}>" # joined with - instead of ,
         backup_socket.sendall(checkpoint_msg.encode())
         #if sent_checkpoint_count <= 1 and checkpoint_messages_pointed == 0:
-        if sent_checkpoint_count <= 1:
+        if sent_checkpoint_count <= 1 and adding_new_replica:
             checkpoint_messages_pointed += 1
             print(f"\033[1;32m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [CHECKPOINT NUM {checkpoint_count}] {server_id} sending checkpoint {my_state} to backup server\033[0m")
         checkpoint_count += 1
