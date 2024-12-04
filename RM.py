@@ -25,7 +25,7 @@ server_scripts = {
 #     # now the server machines should log everything
 #     print(f"Recovering {removed_server} on {remote_host}...")
 #     subprocess.Popen(ssh_command)
-    
+
 def recover_server(removed_server):
     if removed_server not in server_scripts:
         raise ValueError(f"Invalid server name: {removed_server}")
@@ -50,7 +50,7 @@ def recover_server(removed_server):
     print(f"tmux attach -t {session_name}")
 
 def gfd_handler(gfd_socket, addr):
-    global membership, member_count, primary, server_launch_time
+    global membership, member_count, primary
     try:
         while True:
             request = gfd_socket.recv(1024).decode("utf-8")
@@ -66,11 +66,11 @@ def gfd_handler(gfd_socket, addr):
                 # elect primary
                 if member_count == 1:
                     primary = added_server
-                    #print(f"RM: new primary is {primary}")
+                    print(f"RM: new primary is {primary}")
                     # notify GFD of the new primary
                     new_primary_text = f"<RM,GFD,new primary,{added_server}>"
                     gfd_socket.sendall(new_primary_text.encode())
-                    #print(f"RM: send new primary {primary} to GFD")
+                    print(f"RM: send new primary {primary} to GFD")
                 print(f"\033[1;32mAdding server {added_server}...\033[0m")
                 print(f"\033[1;35mRM: {member_count} members: {', '.join(membership)}\033[0m")
             elif "delete replica" in request_split:
@@ -81,11 +81,11 @@ def gfd_handler(gfd_socket, addr):
                     # if primary fails, reelect primary
                     if member_count > 0 and removed_server == primary:
                         primary = membership[0]
-                        #print(f"RM: new primary is {primary}")
+                        print(f"RM: new primary is {primary}")
                         # notify GFD of the new primary
                         new_primary_text = f"<RM,GFD,new primary,{primary}>"
                         gfd_socket.sendall(new_primary_text.encode())
-                        #print(f"RM: send new primary {primary} to GFD")
+                        print(f"RM: send new primary {primary} to GFD")
                     print(f"\033[1;31mRemoving server {removed_server}...\033[0m")
                     print(f"\033[1;35mRM: {member_count} members: {', '.join(membership)}\033[0m")
                 if recover_server(removed_server):
