@@ -2,14 +2,55 @@
 import socket
 import sys
 import threading
+import subprocess
 
 membership = []
 member_count = 0
 # keep track of primary replica
 primary = None
+# Dictionary which maps server names to their corresponding shell scripts
+server_scripts = {
+    "S1": ["S1.sh", "ubuntu@ec2-34-222-115-228.us-west-2.compute.amazonaws.com"],
+    "S2": ["S2.sh", "ubuntu@ec2-35-89-143-40.us-west-2.compute.amazonaws.com"],
+    "S3": ["S3.sh", "ubuntu@ec2-34-217-83-10.us-west-2.compute.amazonaws.com"]
+}
+# NEW CODE -- try to recover server based on which server was removed
+# def recover_server(removed_server):
+#     if removed_server not in server_scripts:
+#         raise ValueError(f"Invalid server name: {removed_server}")
+#     shell_script, remote_host = server_scripts[removed_server]
+#     ssh_command = [
+#         "gnome-terminal", "--", "ssh", remote_host, f"bash {shell_script}"
+#     ]
+#     # now the server machines should log everything
+#     print(f"Recovering {removed_server} on {remote_host}...")
+#     subprocess.Popen(ssh_command)
+    
+def recover_server(removed_server):
+    if removed_server not in server_scripts:
+        raise ValueError(f"Invalid server name: {removed_server}")
+    
+    shell_script, remote_host = server_scripts[removed_server]
+    session_name = f"replica_{removed_server}"
+    
+    # SSH command to start the server process in a tmux session
+    ssh_command = [
+        "ssh", "-t", remote_host, 
+        f"tmux new-session -d -s {session_name} 'cd FaultTolerantDistributedSystem && bash {shell_script}; bash'"
+    ]
+    
+    print(f"Recovering {removed_server} on {remote_host} in tmux session '{session_name}'...")
+    try: 
+        subprocess.run(ssh_command, check=True) 
+    except subprocess.CalledProcessError as e: 
+        print(f"Error: {e}") 
+        print(f"Output: {e.output}") 
+        print(f"Return code: {e.returncode}")
+    print(f"To view logs, SSH to {remote_host} and attach to the tmux session:")
+    print(f"tmux attach -t {session_name}")
 
 def gfd_handler(gfd_socket, addr):
-    global membership, member_count, primary
+    global membership, member_count, primary, server_launch_time
     try:
         while True:
             request = gfd_socket.recv(1024).decode("utf-8")
@@ -25,11 +66,11 @@ def gfd_handler(gfd_socket, addr):
                 # elect primary
                 if member_count == 1:
                     primary = added_server
-                    print(f"RM: new primary is {primary}")
+                    #print(f"RM: new primary is {primary}")
                     # notify GFD of the new primary
                     new_primary_text = f"<RM,GFD,new primary,{added_server}>"
                     gfd_socket.sendall(new_primary_text.encode())
-                    print(f"RM: send new primary {primary} to GFD")
+                    #print(f"RM: send new primary {primary} to GFD")
                 print(f"\033[1;32mAdding server {added_server}...\033[0m")
                 print(f"\033[1;35mRM: {member_count} members: {', '.join(membership)}\033[0m")
             elif "delete replica" in request_split:
@@ -40,12 +81,21 @@ def gfd_handler(gfd_socket, addr):
                     # if primary fails, reelect primary
                     if member_count > 0 and removed_server == primary:
                         primary = membership[0]
-                        print(f"RM: new primary is {primary}")
+                        #print(f"RM: new primary is {primary}")
                         # notify GFD of the new primary
                         new_primary_text = f"<RM,GFD,new primary,{primary}>"
                         gfd_socket.sendall(new_primary_text.encode())
-                        print(f"RM: send new primary {primary} to GFD")
+                        #print(f"RM: send new primary {primary} to GFD")
                     print(f"\033[1;31mRemoving server {removed_server}...\033[0m")
+                    print(f"\033[1;35mRM: {member_count} members: {', '.join(membership)}\033[0m")
+                if recover_server(removed_server):
+                    # tell GFD we are RECOVERING
+                    recovered_server_text = f"<RM,GFD,recovered replica,{removed_server}>"
+                    gfd_socket.sendall(recovered_server_text.encode())
+                    # Add the recovered server back to membership
+                    member_count += 1
+                    membership.append(removed_server)
+                    print(f"\033[1;32mRM: {removed_server} has rejoined.\033[0m")
                     print(f"\033[1;35mRM: {member_count} members: {', '.join(membership)}\033[0m")
             
 
@@ -74,6 +124,9 @@ def run_RM(rm_ip):
     try:
         # init rm socket and connect
         rm_socket = socket.socket()
+        # enable reuse
+        rm_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        rm_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         rm_socket.bind((host, port))
         rm_socket.listen(1) # rm listens to GFD
 
