@@ -200,7 +200,8 @@ def peer_handler(peer_sock, server_id, checkpt_freq):
     global is_primary, i_am_ready, adding_new_replica, sent_checkpoint_count, checkpoint_messages_pointed
     while True:
         #if is_primary:
-        if i_am_ready and adding_new_replica:
+        #if i_am_ready and adding_new_replica:
+        if i_am_ready:
             checkpoint_messages_pointed = 0
             res = checkpoint_backups(peer_sock, checkpt_freq, server_id)
             sent_checkpoint_count += 1
