@@ -7,6 +7,7 @@ import threading
 
 adding_new_replica = False
 sent_checkpoint_count = 0
+checkpoint_messages_pointed = 0
 
 # as a primary, checkpoint the backups given a checkpointing frequency
 def checkpoint_backups(backup_socket, checkpt_freq, server_id):
@@ -28,12 +29,13 @@ def checkpoint_backups(backup_socket, checkpt_freq, server_id):
 
     checkpoint_count = 0
 
-    global my_state
+    global my_state, sent_checkpoint_count, checkpoint_messages_pointed
     try:
         #print("CHECKPOINTING BACKUPS")
         checkpoint_msg = f"<{server_id}-{checkpoint_count}-checkpoint-{my_state}>" # joined with - instead of ,
         backup_socket.sendall(checkpoint_msg.encode())
-        if sent_checkpoint_count <= 1:
+        if sent_checkpoint_count <= 1 and checkpoint_messages_pointed == 0:
+            checkpoint_messages_pointed += 1
             print(f"\033[1;32m[{strftime('%Y-%m-%d %H:%M:%S', localtime())}] [CHECKPOINT NUM {checkpoint_count}] {server_id} sending checkpoint {my_state} to backup server\033[0m")
         checkpoint_count += 1
         sleep(checkpt_freq)
@@ -191,10 +193,11 @@ def client_handler(client_socket, addr, server_id):
 
 
 def peer_handler(peer_sock, server_id, checkpt_freq):
-    global is_primary, i_am_ready, adding_new_replica, sent_checkpoint_count
+    global is_primary, i_am_ready, adding_new_replica, sent_checkpoint_count, checkpoint_messages_pointed
     while True:
         #if is_primary:
         if i_am_ready and adding_new_replica:
+            checkpoint_messages_pointed = 0
             res = checkpoint_backups(peer_sock, checkpt_freq, server_id)
             sent_checkpoint_count += 1
             if sent_checkpoint_count >= 5:
