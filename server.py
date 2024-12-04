@@ -6,6 +6,7 @@ import threading
 
 
 adding_new_replica = False
+sent_checkpoint_count = 0
 
 # as a primary, checkpoint the backups given a checkpointing frequency
 def checkpoint_backups(backup_socket, checkpt_freq, server_id):
@@ -90,6 +91,7 @@ def client_handler(client_socket, addr, server_id):
                 is_server_relaunched = request_split[3].strip()
                 lfd_adding_new_replica = request_split[4].strip()
                 if lfd_adding_new_replica == '1':
+                    sent_checkpoint_count = 0
                     adding_new_replica = True
                 #print(request)
                 #print(request_split[3].strip())
@@ -188,12 +190,14 @@ def client_handler(client_socket, addr, server_id):
 
 
 def peer_handler(peer_sock, server_id, checkpt_freq):
-    global is_primary, i_am_ready, adding_new_replica
+    global is_primary, i_am_ready, adding_new_replica, sent_checkpoint_count
     while True:
         #if is_primary:
         if i_am_ready and adding_new_replica:
             res = checkpoint_backups(peer_sock, checkpt_freq, server_id)
-            #adding_new_replica = False
+            sent_checkpoint_count += 1
+            if sent_checkpoint_count == 5:
+                adding_new_replica = False
             if res == -1: 
                 break
         elif not i_am_ready:
