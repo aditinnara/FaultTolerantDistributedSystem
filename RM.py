@@ -14,22 +14,40 @@ server_scripts = {
     "S2": ["S2.sh", "ubuntu@ec2-35-89-143-40.us-west-2.compute.amazonaws.com"],
     "S3": ["S3.sh", "ubuntu@ec2-34-217-83-10.us-west-2.compute.amazonaws.com"]
 }
-# ssh private key related process
-# 1. upload .pem private key
-# 2. run eval "$(ssh-agent)"
-# 3. run ssh-add xxx.pem
-
 # NEW CODE -- try to recover server based on which server was removed
+# def recover_server(removed_server):
+#     if removed_server not in server_scripts:
+#         raise ValueError(f"Invalid server name: {removed_server}")
+#     shell_script, remote_host = server_scripts[removed_server]
+#     ssh_command = [
+#         "gnome-terminal", "--", "ssh", remote_host, f"bash {shell_script}"
+#     ]
+#     # now the server machines should log everything
+#     print(f"Recovering {removed_server} on {remote_host}...")
+#     subprocess.Popen(ssh_command)
+    
 def recover_server(removed_server):
     if removed_server not in server_scripts:
         raise ValueError(f"Invalid server name: {removed_server}")
+    
     shell_script, remote_host = server_scripts[removed_server]
+    session_name = f"replica_{removed_server}"
+    
+    # SSH command to start the server process in a tmux session
     ssh_command = [
-        "ssh", remote_host, f"cd FaultTolerantDistributedSystem;",f"bash {shell_script}"
+        "ssh", "-t", remote_host, 
+        f"tmux new-session -d -s {session_name} 'cd FaultTolerantDistributedSystem && bash {shell_script}; bash'"
     ]
-    # now the server machines should log everything
-    print(f"Recovering {removed_server} on {remote_host}...")
-    subprocess.Popen(ssh_command)
+    
+    print(f"Recovering {removed_server} on {remote_host} in tmux session '{session_name}'...")
+    try: 
+        subprocess.run(ssh_command, check=True) 
+    except subprocess.CalledProcessError as e: 
+        print(f"Error: {e}") 
+        print(f"Output: {e.output}") 
+        print(f"Return code: {e.returncode}")
+    print(f"To view logs, SSH to {remote_host} and attach to the tmux session:")
+    print(f"tmux attach -t {session_name}")
 
 def gfd_handler(gfd_socket, addr):
     global membership, member_count, primary, server_launch_time
