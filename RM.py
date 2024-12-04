@@ -10,9 +10,9 @@ member_count = 0
 primary = None
 # Dictionary which maps server names to their corresponding shell scripts
 server_scripts = {
-    "S1": ["S1.sh", "ubuntu@ec2-34-222-115-228.us-west-2.compute.amazonaws.com"],
-    "S2": ["S2.sh", "ubuntu@ec2-35-89-143-40.us-west-2.compute.amazonaws.com"],
-    "S3": ["S3.sh", "ubuntu@ec2-34-217-83-10.us-west-2.compute.amazonaws.com"]
+    "S1": ["S1.sh", "ubuntu@ec2-3-80-211-150.compute-1.amazonaws.com"],
+    "S2": ["S2.sh", "ec2-user@ec2-44-201-110-34.compute-1.amazonaws.com"],
+    "S3": ["S3.sh", "ubuntu@ec2-18-227-134-0.us-east-2.compute.amazonaws.com"]
 }
 # NEW CODE -- try to recover server based on which server was removed
 # def recover_server(removed_server):
